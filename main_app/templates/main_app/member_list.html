@@ -1,0 +1,453 @@
+{% extends 'base.html' %}
+
+{% block title %}Members{% endblock %}
+
+{% block content %}
+<style>
+    .loading-spinner {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 9999;
+    }
+    
+    .spinner {
+        width: 50px;
+        height: 50px;
+        border: 5px solid #f3f3f3;
+        border-top: 5px solid #1a237e;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.8);
+        z-index: 9998;
+        display: none;
+    }
+
+    .card-shadow {
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    .transition-all {
+        transition: all 0.3s ease;
+    }
+</style>
+
+<div id="loadingOverlay" class="loading-overlay">
+    <div class="loading-spinner">
+        <div class="spinner"></div>
+    </div>
+</div>
+<!-- Main Container -->
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header Section -->
+    <div class="bg-white rounded-xl card-shadow mb-6">
+        <div class="p-6">
+            <div class="flex flex-col lg:flex-row justify-between items-center space-y-4 lg:space-y-0">
+                <div class="flex items-center space-x-4">
+                    <h1 class="text-2xl font-bold text-[#1a237e]">Members Directory</h1>
+                    <span class="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm font-medium">
+                        Total: {{ members|length }}
+                    </span>
+                </div>
+                
+                <div class="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4 w-full lg:w-auto">
+                    <!-- Enhanced Search Bar -->
+                    <div class="relative w-full sm:w-96">
+                        <input type="text" id="table-search" 
+                            class="w-full pl-12 pr-4 py-3 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+                            placeholder="Search by name, card number, or branch...">
+                        <div class="absolute left-4 top-1/2 transform -translate-y-1/2">
+                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        <a href="{% url 'add_main_member' %}" 
+                            class="inline-flex items-center px-4 py-2 text-xs bg-[#1a237e] text-white rounded-lg hover:bg-[#283593] transition-all duration-200 shadow-sm hover:shadow-md w-full sm:w-auto justify-center">
+                            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+                            Add New Member
+                        </a>
+                        <a href="{% url 'add_treasury' %}" 
+                            class="inline-flex items-center px-4 py-2 text-xs bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-200 shadow-sm hover:shadow-md w-full sm:w-auto justify-center">
+                            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            Add Treasury
+                        </a>
+                        <a href="{% url 'add_dependent' %}" 
+                            class="inline-flex items-center px-4 py-2 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 shadow-sm hover:shadow-md w-full sm:w-auto justify-center">
+                            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                            </svg>
+                            Add Dependent
+                        </a>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Table Section -->
+<!-- Table Section -->
+<div class="bg-white rounded-xl card-shadow overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th scope="col" class="px-6 py-4 text-left text-[10px] font-semibold text-[#1a237e] uppercase tracking-wider">Card Number</th>
+                    <th scope="col" class="px-6 py-4 text-left text-[10px] font-semibold text-[#1a237e] uppercase tracking-wider">Name</th>
+                    <th scope="col" class="px-6 py-4 text-left text-[10px] font-semibold text-[#1a237e] uppercase tracking-wider">Branch</th>
+                    <th scope="col" class="px-6 py-4 text-left text-[10px] font-semibold text-[#1a237e] uppercase tracking-wider">Branch Member Number</th>
+                    <th scope="col" class="px-6 py-4 text-left text-[10px] font-semibold text-[#1a237e] uppercase tracking-wider">Status</th>
+                    <th scope="col" class="px-6 py-4 text-right text-[10px] font-semibold text-[#1a237e] uppercase tracking-wider">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for member in members %}
+                <tr class="hover:bg-gray-50 transition-colors duration-150">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-xs font-medium text-[#1a237e] cursor-pointer hover:text-[#283593]" onclick="showMemberDetails('{{ member.card_number }}', '{{ member.name }} {{ member.surname }}', '{{ member.branch }}', '{{ member.gender }}', '{{ member.phone_number }}', '{{ member.address }}', '{{ member.picture_url }}', '{{ member.branch_member_number }}')">
+                            {{ member.card_number }}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                            <div class="h-8 w-8 flex-shrink-0">
+                                <img class="h-8 w-8 rounded-full object-cover" src="{{ member.picture_url }}" alt="">
+                            </div>
+                            <div class="ml-4">
+                                <div class="text-xs font-medium text-gray-900">{{ member.name }} {{ member.surname }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-xs text-gray-900">{{ member.branch }}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-xs text-gray-900">{{ member.branch_member_number }}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 py-0.5 inline-flex text-[10px] leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                            Active
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-xs font-medium">
+                        <div class="flex justify-end space-x-2">
+                            <button onclick="showPaymentHistory('{{ member.card_number }}')" class="inline-flex items-center px-2 py-1 text-[10px] bg-green-50 text-green-700 rounded-md hover:bg-green-100 transition-colors duration-200">
+                                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                Payments
+                            </button>
+                            <button onclick="showDependents('{{ member.card_number }}', '{{ member.name }} {{ member.surname }}')" class="inline-flex items-center px-2 py-1 text-[10px] bg-[#e8eaf6] text-[#1a237e] rounded-md hover:bg-[#c5cae9] transition-colors duration-200">
+                                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                </svg>
+                                Dependents ({{ member.dependent_count }})
+                            </button>
+                            <div class="flex items-center">
+                                <a href="{% url 'edit_member' pk=member.card_number %}" class="inline-flex items-center px-2 py-1 text-[10px] bg-[#e8eaf6] text-[#1a237e] rounded-md hover:bg-[#c5cae9] transition-colors duration-200">
+                                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                    </svg>
+                                    Edit
+                                </a>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+</div>
+<!-- Member Detail Modal -->
+<div id="memberDetailModal" tabindex="-1" aria-hidden="true" class="fixed top-0 left-0 right-0 z-50 hidden w-full p-4 overflow-x-hidden overflow-y-auto md:inset-0 h-[calc(100%-1rem)] max-h-full bg-black bg-opacity-50">
+    <div class="relative w-full max-w-2xl max-h-full mx-auto mt-10">
+        <div class="relative bg-white rounded-2xl shadow-2xl overflow-hidden">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between p-6 border-b bg-gradient-to-r from-[#1a237e] to-[#283593]">
+                <h3 class="text-xl font-bold text-white" id="modalMemberName">
+                    <span id="modalMemberNameText"></span>
+                    <span class="text-sm text-gray-200 ml-2" id="modalBranchMemberNumber"></span>
+                </h3>
+                <button type="button" class="text-gray-200 hover:text-white hover:bg-[#283593] rounded-lg w-8 h-8 flex items-center justify-center transition-all duration-200" onclick="closeModal()">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Modal Content -->
+            <div class="p-8">
+                <!-- Profile Image Section -->
+                <div class="flex flex-col items-center mb-8">
+                    <div class="relative">
+                        <img id="modalMemberPicture" class="h-32 w-32 rounded-full object-cover ring-4 ring-[#1a237e] ring-offset-4" alt="Member Picture">
+                        <div class="absolute bottom-0 right-0 bg-green-500 w-6 h-6 rounded-full border-4 border-white"></div>
+                    </div>
+                </div>
+
+                <!-- Details Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="space-y-6">
+                        <!-- Left Column -->
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <label class="text-xs font-semibold text-gray-500 uppercase">Card Number</label>
+                            <p id="modalCardNumber" class="mt-1 text-sm font-medium text-gray-900"></p>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <label class="text-xs font-semibold text-gray-500 uppercase">Name</label>
+                            <p id="modalName" class="mt-1 text-sm font-medium text-gray-900"></p>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <label class="text-xs font-semibold text-gray-500 uppercase">Branch</label>
+                            <p id="modalBranch" class="mt-1 text-sm font-medium text-gray-900"></p>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-6">
+                        <!-- Right Column -->
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <label class="text-xs font-semibold text-gray-500 uppercase">Gender</label>
+                            <p id="modalGender" class="mt-1 text-sm font-medium text-gray-900"></p>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <label class="text-xs font-semibold text-gray-500 uppercase">Phone</label>
+                            <p id="modalPhone" class="mt-1 text-sm font-medium text-gray-900"></p>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <label class="text-xs font-semibold text-gray-500 uppercase">Address</label>
+                            <p id="modalAddress" class="mt-1 text-sm font-medium text-gray-900"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Payment History Modal -->
+<div id="paymentHistoryModal" tabindex="-1" aria-hidden="true" class="fixed top-0 left-0 right-0 z-50 hidden w-full p-4 overflow-x-hidden overflow-y-auto md:inset-0 h-[calc(100%-1rem)] max-h-full bg-black bg-opacity-50">
+    <div class="relative w-full max-w-4xl max-h-full mx-auto mt-10">
+        <div class="relative bg-white rounded-2xl shadow-2xl overflow-hidden">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between p-6 border-b bg-gradient-to-r from-[#1a237e] to-[#283593]">
+                <h3 class="text-xl font-bold text-white">Payment History</h3>
+                <button type="button" class="text-gray-200 hover:text-white hover:bg-[#283593] rounded-lg w-8 h-8 flex items-center justify-center transition-all duration-200" onclick="closePaymentModal()">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Modal Content -->
+            <div class="p-6">
+                <div class="overflow-x-auto rounded-lg shadow">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-semibold text-[#1a237e] uppercase tracking-wider">Fund</th>
+                                <th class="px-6 py-3 text-left text-xs font-semibold text-[#1a237e] uppercase tracking-wider">Amount</th>
+                                <th class="px-6 py-3 text-left text-xs font-semibold text-[#1a237e] uppercase tracking-wider">Year</th>
+                                <th class="px-6 py-3 text-left text-xs font-semibold text-[#1a237e] uppercase tracking-wider">Month</th>
+                                <th class="px-6 py-3 text-left text-xs font-semibold text-[#1a237e] uppercase tracking-wider">Date</th>
+                                <th class="px-6 py-3 text-left text-xs font-semibold text-[#1a237e] uppercase tracking-wider">Receipt</th>
+                            </tr>
+                        </thead>
+                        <tbody id="paymentHistoryBody" class="bg-white divide-y divide-gray-200">
+                            <!-- Table rows are dynamically inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Dependents Modal -->
+<div id="dependentsModal" tabindex="-1" aria-hidden="true" class="fixed top-0 left-0 right-0 z-50 hidden w-full p-4 overflow-x-hidden overflow-y-auto md:inset-0 h-[calc(100%-1rem)] max-h-full bg-black bg-opacity-50">
+    <div class="relative w-full max-w-4xl max-h-full mx-auto mt-10">
+        <div class="relative bg-white rounded-2xl shadow-2xl overflow-hidden">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between p-6 border-b bg-gradient-to-r from-[#1a237e] to-[#283593]">
+                <h3 class="text-xl font-bold text-white" id="dependentsModalTitle">Dependents</h3>
+                <button type="button" class="text-gray-200 hover:text-white hover:bg-[#283593] rounded-lg w-8 h-8 flex items-center justify-center transition-all duration-200" onclick="closeDependentsModal()">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Modal Content -->
+            <div class="p-6">
+                <div class="overflow-x-auto rounded-lg shadow">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-semibold text-[#1a237e] uppercase tracking-wider">Name</th>
+                                <th class="px-6 py-3 text-left text-xs font-semibold text-[#1a237e] uppercase tracking-wider">Surname</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dependentsBody" class="bg-white divide-y divide-gray-200">
+                            <!-- Table rows are dynamically inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</div>
+<script>
+    let currentBranchMemberNumber = '';
+    
+    function showLoading() {
+        document.getElementById('loadingOverlay').style.display = 'block';
+    }
+    
+    function hideLoading() {
+        document.getElementById('loadingOverlay').style.display = 'none';
+    }
+    
+    // Search functionality
+    document.getElementById('table-search').addEventListener('keyup', function() {
+        const searchText = this.value.toLowerCase();
+        const tableRows = document.querySelectorAll('tbody tr');
+    
+        tableRows.forEach(row => {
+            const cardNumber = row.querySelector('td:nth-child(1)').textContent.toLowerCase();
+            const name = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+            const branch = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
+    
+            if (cardNumber.includes(searchText) || 
+                name.includes(searchText) || 
+                branch.includes(searchText)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    });
+    
+    function showMemberDetails(cardNumber, name, branch, gender, phone, address, pictureUrl) {
+        document.getElementById('modalMemberName').textContent = name;
+        document.getElementById('modalCardNumber').textContent = cardNumber;
+        document.getElementById('modalName').textContent = name;
+        document.getElementById('modalBranch').textContent = branch;
+        document.getElementById('modalGender').textContent = gender;
+        document.getElementById('modalPhone').textContent = phone;
+        document.getElementById('modalAddress').textContent = address;
+        document.getElementById('modalMemberPicture').src = pictureUrl || '/static/default-profile.jpg';
+    
+        document.getElementById('memberDetailModal').classList.remove('hidden');
+    }
+    
+    function closeModal() {
+        document.getElementById('memberDetailModal').classList.add('hidden');
+    }
+    
+    function showPaymentHistory(cardNumber) {
+        showLoading();
+        fetch(`/api/member/${cardNumber}/payments/`)
+            .then(response => response.json())
+            .then(data => {
+                const tbody = document.getElementById('paymentHistoryBody');
+                tbody.innerHTML = '';
+                
+                data.forEach(payment => {
+                    tbody.innerHTML += `
+                        <tr class="hover:bg-[#e8eaf6]">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${payment.fund}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">R${payment.amount}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${payment.Fund_Date_Year}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${payment.Fund_Date_Month}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${payment.payment_date}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${payment.receipt_number}</td>
+                        </tr>
+                    `;
+                });
+                
+                document.getElementById('paymentHistoryModal').classList.remove('hidden');
+            })
+            .finally(() => {
+                hideLoading();
+            });
+    }    
+    
+    function closePaymentModal() {
+        document.getElementById('paymentHistoryModal').classList.add('hidden');
+    }
+    
+    function showDependents(cardNumber, memberName) {
+        showLoading();
+        fetch(`/api/member/${cardNumber}/dependents/`)
+            .then(response => response.json())
+            .then(data => {
+                const tbody = document.getElementById('dependentsBody');
+                document.getElementById('dependentsModalTitle').textContent = `Dependents - ${memberName}`;
+                tbody.innerHTML = '';
+                
+                data.forEach(dependent => {
+                    tbody.innerHTML += `
+                        <tr class="hover:bg-[#e8eaf6]">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${dependent.name}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${dependent.surname}</td>
+                        </tr>
+                    `;
+                });
+                
+                document.getElementById('dependentsModal').classList.remove('hidden');
+            })
+            .finally(() => {
+                hideLoading();
+            });
+    }
+    
+    function closeDependentsModal() {
+        document.getElementById('dependentsModal').classList.add('hidden');
+    }
+    
+    // Close modals when clicking outside
+    window.onclick = function(event) {
+        const memberModal = document.getElementById('memberDetailModal');
+        const paymentModal = document.getElementById('paymentHistoryModal');
+        const dependentsModal = document.getElementById('dependentsModal');
+        
+        if (event.target === memberModal) {
+            memberModal.classList.add('hidden');
+        }
+        if (event.target === paymentModal) {
+            paymentModal.classList.add('hidden');
+        }
+        if (event.target === dependentsModal) {
+            dependentsModal.classList.add('hidden');
+        }
+    }
+</script>
+
+{% endblock %}
+
+

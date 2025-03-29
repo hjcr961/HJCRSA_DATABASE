@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+
+{% block title %}Dependents List{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold">Dependents List</h2>
+        <a href="{% url 'add_dependent' %}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+            Add New Dependent
+        </a>
+    </div>
+
+    <!-- Loading Indicator -->
+    <div id="loadingOverlay" class="hidden fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+        </div>
+    </div>
+
+    <div class="bg-white shadow-md rounded-lg overflow-x-auto">
+        <table class="min-w-full table-auto">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Card Number</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Surname</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for dependent in dependents %}
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap">{{ dependent.card_number }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">{{ dependent.name }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">{{ dependent.surname }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right">
+                        <button onclick="showPaymentHistory(event, '{{ dependent.idDependents }}')" 
+                                class="inline-flex items-center px-3 py-1.5 bg-green-50 text-green-700 rounded-md hover:bg-green-100 transition-colors duration-200">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            Payments
+                        </button>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="px-6 py-4 text-center">No dependents found</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Payment History Modal -->
+<div id="paymentHistoryModal" tabindex="-1" aria-hidden="true" class="fixed top-0 left-0 right-0 z-50 hidden w-full p-4 overflow-x-hidden overflow-y-auto md:inset-0 h-[calc(100%-1rem)] max-h-full">
+    <div class="relative w-full max-w-4xl max-h-full">
+        <div class="relative bg-white rounded-xl shadow-2xl">
+            <div class="flex items-start justify-between p-6 border-b">
+                <h3 class="text-xl font-semibold text-[#1a237e]">Payment History</h3>
+                <button type="button" class="text-gray-400 bg-transparent hover:bg-gray-100 hover:text-gray-900 rounded-lg w-8 h-8 flex items-center justify-center" onclick="closePaymentModal()">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="p-6">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-semibold text-[#1a237e] uppercase">Fund</th>
+                                <th class="px-6 py-3 text-left text-xs font-semibold text-[#1a237e] uppercase">Amount</th>
+                                <th class="px-6 py-3 text-left text-xs font-semibold text-[#1a237e] uppercase">Date</th>
+                                <th class="px-6 py-3 text-left text-xs font-semibold text-[#1a237e] uppercase">Receipt</th>
+                            </tr>
+                        </thead>
+                        <tbody id="paymentHistoryBody" class="bg-white divide-y divide-gray-200"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function showPaymentHistory(event, dependentId) {
+        event.preventDefault();
+        const indicator = document.getElementById('loadingOverlay');
+        const modal = document.getElementById('paymentHistoryModal');
+        
+        indicator.classList.remove('hidden');
+        
+        fetch(`/api/dependent/${dependentId}/payments/`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                const tbody = document.getElementById('paymentHistoryBody');
+                tbody.innerHTML = '';
+                
+                data.forEach(payment => {
+                    tbody.innerHTML += `
+                        <tr class="hover:bg-[#e8eaf6]">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${payment.fund}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">R${payment.amount}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${payment.payment_date}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${payment.reciept_number}</td>
+                        </tr>
+                    `;
+                });
+                
+                modal.classList.remove('hidden');
+                indicator.classList.add('hidden');
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                indicator.classList.add('hidden');
+                alert('Failed to load payment history');
+            });
+    }
+    
+function closePaymentModal() {
+    document.getElementById('paymentHistoryModal').classList.add('hidden');
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('paymentHistoryModal');
+    if (event.target === modal) {
+        closePaymentModal();
+    }
+}
+</script>
+
+<style>
+.loading-spinner {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 9999;
+}
+
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid #1a237e;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+</style>
+{% endblock %}

@@ -1,0 +1,23 @@
+/* Loading Spinner */
+.loading-spinner {
+    @apply inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite];
+    border-color: #3b82f6 transparent #3b82f6 transparent;
+}
+
+/* Skeleton Loading */
+.skeleton {
+    @apply animate-pulse bg-gray-200 rounded;
+}
+
+.skeleton-text {
+    @apply h-4 bg-gray-200 rounded w-3/4;
+}
+
+.skeleton-circle {
+    @apply h-12 w-12 bg-gray-200 rounded-full;
+}
+
+/* Card Loading State */
+.card-loading {
+    @apply border border-gray-200 shadow rounded-md p-4 w-full mx-auto;
+}

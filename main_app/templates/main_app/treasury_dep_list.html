@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block title %}Treasury Dependent Records{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold">Treasury Dependent Records</h2>
+        <a href="{% url 'add_treasury_dep' %}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+            Add New Treasury Dependent Record
+        </a>
+    </div>
+
+    <div class="bg-white shadow-md rounded-lg overflow-x-auto">
+        <table class="min-w-full table-auto">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Card Number</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fund</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Receipt No.</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for record in treasury_dep_records %}
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap">{{ record.idTreasury_Dep }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">{{ record.card_number }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">R {{ record.amount }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">{{ record.fund }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">{{ record.payment_date }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">{{ record.reciept_number }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="px-6 py-4 text-center">No treasury dependent records found</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

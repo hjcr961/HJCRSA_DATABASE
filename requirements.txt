@@ -1,0 +1,12 @@
+asgiref==3.8.1
+Django==5.1.2
+django-filter==24.3
+django-mysql-pool==0.2
+django-widget-tweaks==1.5.0
+gunicorn==23.0.0
+mysqlclient==2.2.5
+packaging==24.1
+pillow==11.0.0
+python-dotenv==1.0.1
+sqlparse==0.5.1
+whitenoise==6.6.0

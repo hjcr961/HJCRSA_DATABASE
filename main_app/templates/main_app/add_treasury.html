@@ -1,0 +1,321 @@
+{% extends 'base.html' %}
+
+{% block title %}Add Treasury Record{% endblock %}
+
+{% block content %}
+<style>
+    /* Target all input, select, and textarea elements */
+    input[type="text"],
+    input[type="number"],
+    input[type="date"],
+    select,
+    textarea {
+        border: 2px solid #d1d5db !important; /* Gray border */
+        border-radius: 0.375rem !important;
+        transition: all 0.2s ease !important;
+    }
+    
+    /* Style for focused inputs */
+    input[type="text"]:focus,
+    input[type="number"]:focus,
+    input[type="date"]:focus,
+    select:focus,
+    textarea:focus {
+        border-color: #3b82f6 !important; /* Blue border when focused */
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3) !important;
+        outline: none !important;
+    }
+</style>
+<div class="min-h-screen bg-gray-50 py-8">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Header Section -->
+        <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+            <div class="flex items-center justify-between">
+                <h2 class="text-2xl font-bold text-gray-900">Add New Treasury Record</h2>
+                <a href="{% url 'treasury_list' %}" class="text-blue-600 hover:text-blue-800 flex items-center">
+                    <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                    </svg>
+                    Back to List
+                </a>
+            </div>
+        </div>
+
+        <!-- Loading Indicators -->
+        <div id="validating-indicator" class="hidden fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white p-6 rounded-lg shadow-xl flex items-center space-x-4">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <span class="text-lg font-semibold text-gray-700">Validating card number...</span>
+            </div>
+        </div>
+
+        <div id="saving-indicator" class="hidden fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white p-6 rounded-lg shadow-xl flex items-center space-x-4">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <span class="text-lg font-semibold text-gray-700">Saving treasury records...</span>
+            </div>
+        </div>
+
+        <!-- Main Form -->
+        <div class="bg-white rounded-lg shadow-sm">
+            <form method="post" class="space-y-6 p-6" id="treasury-form" action="{% url 'add_treasury' %}">
+                {% csrf_token %}
+                
+                <!-- Card Number Field -->
+                <div class="form-group">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Member Card Number</label>
+                    <input type="text" name="idmain_member" id="id_idmain_member" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
+                </div>
+
+                <!-- Payment Date Field -->
+                <div class="form-group">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Payment Date</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                        </div>
+                        <input type="text" name="payment_date" id="payment_date" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2.5" placeholder="Select date" required>
+                    </div>
+                </div>
+                <!-- Receipt Number Field -->
+                <div class="form-group">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Receipt Number</label>
+                    <input type="text" 
+                        name="receipt_number" 
+                        id="receipt_number" 
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" 
+                        required>
+                </div>
+<!-- Amount Field -->   
+                <!-- Multiple Funds Section -->
+                <div id="funds-container">
+                    <div class="fund-entry bg-gray-50 p-4 rounded-lg mb-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="form-group">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Fund Type</label>
+                                <select name="fund[]" class="fund-type mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
+                                    {% for value, label in form.fund.field.choices %}
+                                        <option value="{{ value }}">{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Fund Years</label>
+                                <select name="fund_date_year[]" multiple class="fund-years mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" size="4" required>
+                                    {% for year in years %}
+                                        <option value="{{ year }}">{{ year }}</option>
+                                    {% endfor %}
+                                </select>
+                                <p class="text-sm text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple years</p>
+                            </div>
+                            <div class="form-group">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Fund Months (e.g. 1-3)</label>
+                                <input type="text" 
+                                       name="fund_date_month[]" 
+                                       class="fund-month mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" 
+                                       pattern="^\d{1,2}-\d{1,2}$" 
+                                       title="Please enter in format: 1-3 (start month-end month)"
+                                       required>
+                            </div>
+                            
+                            <div class="form-group col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Amount</label>
+                                <input type="number" name="amount[]" class="fund-amount mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" step="0.01" required>
+                            </div>
+                        </div>
+                        <button type="button" class="remove-fund text-red-600 mt-2 flex items-center">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                            </svg>
+                            Remove Fund
+                        </button>
+                    </div>
+                </div>
+
+                <button type="button" id="add-fund" class="mt-4 inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                    </svg>
+                    Add Another Fund
+                </button>
+
+                <!-- Summary Section -->
+                <div class="mt-6 bg-gray-50 p-4 rounded-lg">
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">Summary</h3>
+                    <div id="funds-summary" class="space-y-2">
+                        <div class="flex justify-between">
+                            <span>Total Funds:</span>
+                            <span id="total-funds">1</span>
+                        </div>
+                        <div class="flex justify-between font-medium">
+                            <span>Total Amount:</span>
+                            <span id="total-amount">R0.00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end pt-6 border-t border-gray-200">
+                    <button type="submit" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        Save Treasury Record
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Include Flatpickr -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    flatpickr("#payment_date", {
+        dateFormat: "Y-m-d",
+        defaultDate: "today"
+    });
+
+    document.getElementById('id_idmain_member').addEventListener('blur', validateCardNumber);
+    document.getElementById('treasury-form').addEventListener('submit', handleFormSubmit);
+    document.getElementById('add-fund').addEventListener('click', addNewFund);
+    initializeRemoveButtons();
+    updateSummary();
+
+    document.addEventListener('input', function(e) {
+        if (e.target.classList.contains('fund-amount')) {
+            updateSummary();
+        }
+    });
+});
+
+function validateCardNumber() {
+    const cardNumber = this.value.trim();
+    const indicator = document.getElementById('validating-indicator');
+    
+    if (!cardNumber) return;
+    
+    indicator.classList.remove('hidden');
+    
+    fetch(`/validate-card-number/?card_number=${cardNumber}`)
+        .then(response => response.json())
+        .then(data => {
+            indicator.classList.add('hidden');
+            if (!data.exists) {
+                alert('Invalid card number. Please enter a valid member card number.');
+                this.value = '';
+                this.focus();
+            }
+        })
+        .catch(error => {
+            indicator.classList.add('hidden');
+            console.error('Validation error:', error);
+        });
+}
+
+function handleFormSubmit(e) {
+    e.preventDefault();
+    const savingIndicator = document.getElementById('saving-indicator');
+    savingIndicator.classList.remove('hidden');
+
+    const formData = new FormData(this);
+    const fundEntries = document.querySelectorAll('.fund-entry');
+    
+    // Clear any existing arrays
+    formData.delete('fund[]');
+    formData.delete('fund_date_year[]');
+    formData.delete('amount[]');
+
+    fundEntries.forEach((entry, index) => {
+        formData.append('fund[]', entry.querySelector('.fund-type').value);
+        const selectedYears = Array.from(entry.querySelector('.fund-years').selectedOptions)
+            .map(opt => opt.value);
+        formData.append('fund_date_year[]', JSON.stringify(selectedYears));
+        formData.append('amount[]', entry.querySelector('.fund-amount').value);
+    });
+
+    fetch(this.action, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.href = data.redirect_url;
+        } else {
+            throw new Error(data.error || 'Failed to save record');
+        }
+    })
+    .catch(error => {
+        console.error('Submission error:', error);
+        alert('Error saving record: ' + error.message);
+    })
+    .finally(() => {
+        savingIndicator.classList.add('hidden');
+    });
+}
+
+function addNewFund() {
+    const container = document.getElementById('funds-container');
+    const template = container.querySelector('.fund-entry').cloneNode(true);
+    
+    template.querySelectorAll('input, select').forEach(element => {
+        element.value = '';
+        if (element.multiple) {
+            Array.from(element.options).forEach(opt => opt.selected = false);
+        }
+    });
+    
+    template.querySelector('.remove-fund').addEventListener('click', function() {
+        if (container.children.length > 1) {
+            this.closest('.fund-entry').remove();
+            updateSummary();
+        }
+    });
+    
+    container.appendChild(template);
+    updateSummary();
+}
+
+function initializeRemoveButtons() {
+    document.querySelectorAll('.remove-fund').forEach(button => {
+        button.addEventListener('click', function() {
+            const container = document.getElementById('funds-container');
+            if (container.children.length > 1) {
+                this.closest('.fund-entry').remove();
+                updateSummary();
+            }
+        });
+    });
+}
+
+function updateSummary() {
+    const entries = document.querySelectorAll('.fund-entry');
+    const total = Array.from(entries).reduce((sum, entry) => {
+        const amount = parseFloat(entry.querySelector('.fund-amount').value) || 0;
+        return sum + amount;
+    }, 0);
+    
+    document.getElementById('total-funds').textContent = entries.length;
+    document.getElementById('total-amount').textContent = `R${total.toFixed(2)}`;
+}
+// Add this to your existing JavaScript at the bottom
+document.addEventListener('DOMContentLoaded', function() {
+    // Add highlight class to all input fields when focused
+    const inputFields = document.querySelectorAll('input, select');
+    inputFields.forEach(field => {
+        field.addEventListener('focus', function() {
+            this.classList.add('highlight-input');
+        });
+        field.addEventListener('blur', function() {
+            this.classList.remove('highlight-input');
+        });
+    });
+
+});
+</script>
+{% endblock %}

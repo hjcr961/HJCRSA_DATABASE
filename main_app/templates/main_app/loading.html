@@ -1,0 +1,22 @@
+{% load static %}
+
+<!-- Loading Overlay -->
+<div id="loading-overlay" class="fixed inset-0 bg-gray-900 bg-opacity-50 z-50 flex items-center justify-center hidden">
+    <div class="bg-white rounded-lg p-8 flex flex-col items-center">
+        <div class="loading-spinner"></div>
+        <p class="mt-4 text-gray-700">Loading...</p>
+    </div>
+</div>
+
+<!-- Skeleton Loading for Tables -->
+<div id="table-skeleton" class="space-y-3">
+    {% for i in "123456"|make_list %}
+    <div class="flex items-center space-x-4 animate-pulse">
+        <div class="skeleton-circle"></div>
+        <div class="flex-1 space-y-2">
+            <div class="skeleton-text"></div>
+            <div class="skeleton w-1/2"></div>
+        </div>
+    </div>
+    {% endfor %}
+</div>

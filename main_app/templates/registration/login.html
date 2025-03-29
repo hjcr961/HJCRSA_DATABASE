@@ -1,0 +1,166 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HJCRSA - Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, ##02198b);    /* Using blue-800 to blue-700 */
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 2rem;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .login-card {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            max-width: 400px;
+            width: 100%;
+            padding: 2.5rem;
+            text-align: center;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        .input-field {
+            transition: all 0.3s ease;
+            border: 1px solid #e2e8f0;
+            background: white;
+            padding-left: 2.5rem;
+        }
+
+        .input-field:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .btn-gradient {
+            background: linear-gradient(135deg, #2563eb, #6a11cb);
+            color: white;
+            border: none;
+            transition: all 0.3s ease;
+        }
+
+        .btn-gradient:hover {
+            background: linear-gradient(135deg, #1d4ed8, #4c0c9a);
+        }
+
+        .error-message {
+            background-color: #fee2e2;
+            border: 1px solid #ef4444;
+            color: #dc2626;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <!-- Add this right after the opening body tag -->
+
+
+    <div class="login-card">
+        <div class="text-center mb-8">
+            <h2 class="text-4xl font-extrabold text-[#1e3a8a] mb-2">HJCRSA</h2>
+            <img src="{% static 'main_app/images/logo.png' %}" class="h-24 mx-auto mb-4" alt="HJCRSA Logo" />
+        </div>
+    
+    {% if messages %}
+        {% for message in messages %}
+            <div class="error-message">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+        <form method="POST" class="space-y-6">
+            {% csrf_token %}
+            <div class="relative">
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-user text-gray-400"></i>
+                    </div>
+                    <input 
+                        id="username" 
+                        name="username" 
+                        type="text" 
+                        required 
+                        placeholder="Username" 
+                        class="input-field w-full px-12 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                </div>
+                
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-lock text-gray-400"></i>
+                    </div>
+                    <input 
+                        id="password" 
+                        name="password" 
+                        type="password" 
+                        required 
+                        placeholder="Password" 
+                        class="input-field w-full px-12 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                </div>                
+
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <input 
+                        id="remember-me" 
+                        name="remember-me" 
+                        type="checkbox" 
+                        class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    >
+                    <label for="remember-me" class="ml-2 block text-sm text-gray-600">
+                        Remember me
+                    </label>
+                </div>
+
+                <div class="text-sm">
+                    <a href="#" class="font-medium text-blue-600 hover:text-blue-500">
+                        Forgot password?
+                    </a>
+                </div>
+            </div>
+
+            <div>
+                <button 
+                    type="submit" 
+                    class="btn-gradient w-full py-3 px-4 rounded-lg text-sm font-bold focus:outline-none"
+                >
+                    Sign In
+                </button>
+            </div>
+        </form>
+
+        <div class="mt-6 text-center">
+            <p class="text-sm text-gray-600">
+                Don't have an account? 
+                <a href="{% url 'signup' %}" class="font-medium text-blue-600 hover:text-blue-500">
+                    Sign up
+                </a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>
