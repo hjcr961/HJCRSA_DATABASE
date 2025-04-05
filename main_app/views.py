@@ -39,15 +39,11 @@ from django.views.decorators.http import require_http_methods
 from django.utils import timezone
 from PIL import Image
 from io import BytesIO
+from django.db.models import Sum
 
 
 
 
-
-
-@login_required
-def home_view(request):
-    return render(request, 'main_app/home.html')
 
 @require_http_methods(["GET", "POST"])
 def upload_picture(request):
@@ -100,14 +96,6 @@ def upload_picture(request):
 
 
 
-def home(request):
-    return render(request, 'main_app/home.html')
-
-from django.shortcuts import render
-from django.http import JsonResponse
-from datetime import datetime
-from .models import MainMembers, Dependents
-from .forms import MainMembersForm
 
 def add_main_member(request):
     if request.method == 'POST':
@@ -220,6 +208,9 @@ def validate_card_number(request):
 def member_list(request):
     # Fetch members ordered by surname and name
     members = MainMembers.objects.order_by('surname', 'name')
+    
+    # Fetch dependents
+    dependents = Dependents.objects.order_by('surname', 'name')
 
     # Fetch pictures using raw SQL (since Member_Pictures is not a Django model)
     with connection.cursor() as cursor:
@@ -251,7 +242,11 @@ def member_list(request):
         member.dependent_count = dependent_counts.get(member.card_number, 0)
 
     # Render the template
-    return render(request, 'main_app/member_list.html', {'members': members})
+    return render(request, 'main_app/member_list.html', {
+        'members': members,
+        'dependents': dependents,  # Add dependents to the context
+    })
+
 
 
 def upload_member_picture(request, branch_member_number):
@@ -568,10 +563,30 @@ def login_view(request):
 
 
 
-
 @login_required
 def home_view(request):
-    return render(request, 'main_app/home.html')
+    # Count total members
+    total_members = MainMembers.objects.count()
+    
+    # Count total dependents
+    total_dependents = Dependents.objects.count()
+
+    # Calculate total value and count of "Annual" payments for the current year
+    current_year = datetime.now().year
+    annual_payments = Treasury.objects.filter(fund='Annual', fund_date_year=current_year)
+    total_annual_value = annual_payments.aggregate(Sum('amount'))['amount__sum'] or 0
+    total_annual_count = annual_payments.count()
+    
+    # Pass the data to the template
+    context = {
+        'total_members': total_members,
+        'total_dependents': total_dependents,
+        'total_annual_value': total_annual_value,
+        'total_annual_count': total_annual_count,
+        'current_year': current_year,  # Add this line
+    }
+    
+    return render(request, 'main_app/home.html', context)
 
 @login_required
 def get_dependent_payments(request, card_number):
