@@ -1,645 +1,944 @@
-from django.shortcuts import render, redirect
-from django.contrib import messages
-from .forms import MainMembersForm, DependentsForm, TreasuryForm, TreasuryDepForm
-from .models import MainMembers, Dependents, Treasury, TreasuryDep
-from django.views.generic import ListView
-from .models import ActivityLog
-from django_filters.views import FilterView
-from .filters import ActivityLogFilter
-from django.views.generic.edit import UpdateView
-from django.urls import reverse_lazy
-from .models import MainMembers
-from django.db.models import Prefetch
-from base64 import b64encode
-from .models import MainMembers, MemberPictures
-from PIL import Image
-import io
-from django.shortcuts import render
-from django.db import connection
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required, user_passes_test
+from .models import Service, Booking,BookingNumberCounter
+from .forms import BookingForm
+from .utils import send_booking_notification
+from django.utils import timezone
 from django.http import JsonResponse
-from django.shortcuts import render, redirect
-from django.contrib import messages 
-import logging
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth import login
-from .auth import CustomAuthBackend
-from django.contrib.auth import authenticate, login
-from datetime import datetime
-from .models import MainMembers, Dependents
-from .forms import MainMembersForm
-from django.contrib.auth.decorators import permission_required
-import json
 from django.urls import reverse
-from django.contrib.auth.models import User
+from .forms import ServiceForm
+from django.template.loader import render_to_string
+from django.core.mail import send_mail
+from django.conf import settings
 from django.contrib import messages
-from django.db.models import Count
-from django.http import JsonResponse
-from .models import Picture
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+from io import BytesIO
+from django.http import FileResponse
+from decimal import Decimal
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
+from reportlab.lib.units import inch
+from django.contrib.staticfiles import finders
+from reportlab.platypus import Table, TableStyle
+from .forms import CustomUserCreationForm
+from django.contrib.auth import login, logout,authenticate
+from django.contrib.auth.forms import AuthenticationForm
+import json
+from datetime import datetime, time
+from datetime import date
+from .forms import StaffUserCreationForm
+from django.shortcuts import render, redirect
+from django.core.mail import send_mail
+import ssl
+from django.db.models import Sum
+from django.utils.dateparse import parse_date
+from django.contrib.auth import logout
+from django.shortcuts import redirect
 from django.views.decorators.http import require_http_methods
 from django.utils import timezone
-from PIL import Image
-from io import BytesIO
+from decimal import Decimal
+from .models import Service, Booking, BookingNumberCounter, Room
+from datetime import timedelta
+import json
+
+
+
+
+
+ssl._create_default_https_context = ssl._create_unverified_context
+
+# Add at the top of the file with other imports
 
 
 
 
 
 
-@login_required
-def home_view(request):
-    return render(request, 'main_app/home.html')
 
-@require_http_methods(["GET", "POST"])
-def upload_picture(request):
-    if request.method == 'POST':
-        if 'picture' in request.FILES:
-            picture = request.FILES['picture']
-            branch_member_number = request.POST.get('branch_member_number')
-            
-            # First verify the member exists
-            with connection.cursor() as cursor:
-                cursor.execute("""
-                    SELECT Branch_Member_Number 
-                    FROM Main_Members 
-                    WHERE Branch_Member_Number = %s
-                """, [branch_member_number])
-                member_exists = cursor.fetchone()
-                
-                if not member_exists:
-                    messages.error(request, 'Invalid Branch Member Number. Please enter a valid member number.')
-                    return redirect('upload_picture')
-            
-            # Process image if member exists
-            img = Image.open(picture)
-            if img.mode in ('RGBA', 'P'): 
-                img = img.convert('RGB')
-            
-            max_size = (800, 800)
-            img.thumbnail(max_size, Image.Resampling.LANCZOS)
-            
-            buffer = BytesIO()
-            img.save(buffer, format='JPEG', quality=10, optimize=True)
-            compressed_image = buffer.getvalue()
-            
-            if len(compressed_image) > 65000:
-                messages.error(request, 'Image is too large. Please use a smaller image.')
-                return redirect('upload_picture')
-            
-            # Insert the picture
-            with connection.cursor() as cursor:
-                cursor.execute("""
-                    INSERT INTO Member_Pictures (Branch_Member_Number, picture_data, upload_date) 
-                    VALUES (%s, %s, %s)
-                """, [branch_member_number, compressed_image, timezone.now()])
-            
-            messages.success(request, 'Picture uploaded successfully!')
-            return redirect('home')
-            
-    return render(request, 'main_app/upload_picture.html')
+
+
+
+
 
 
 
 
 def home(request):
-    return render(request, 'main_app/home.html')
+    return render(request, 'bookings/home.html')
 
-from django.shortcuts import render
-from django.http import JsonResponse
-from datetime import datetime
-from .models import MainMembers, Dependents
-from .forms import MainMembersForm
+def services(request):
+    spa_services = Service.objects.filter(service_type='spa')
+    lodge_services = Service.objects.filter(service_type='lodge')
+    
+    context = {
+        'spa_services': spa_services,
+        'lodge_services': lodge_services,
+    }
+    return render(request, 'bookings/services.html', context)
 
-def add_main_member(request):
-    if request.method == 'POST':
-        return handle_post_request(request)
-    else:
-        return handle_get_request(request)
 
-def handle_post_request(request):
-    form = MainMembersForm(request.POST)
-    if not form.is_valid():
-        return JsonResponse({'success': False, 'errors': form.errors})
+@login_required
+def my_bookings(request):
+    bookings = Booking.objects.all().order_by('-created_at', '-booking_date')
+    return render(request, 'bookings/my_bookings.html', {'bookings': bookings})
 
-    # Process dependents and calculate their count
-    dependent_first_names = request.POST.getlist('dependent_first_name[]')
-    dependent_last_names = request.POST.getlist('dependent_last_name[]')
-    number_of_dependants = calculate_number_of_dependants(dependent_first_names)
 
-    # Save the main member
-    main_member = save_main_member(form, number_of_dependants)
 
-    # Save the dependents
-    save_dependents(dependent_first_names, dependent_last_names, main_member.card_number)
+def is_owner(user):
+    return user.is_staff
 
-    return JsonResponse({'success': True})
+@user_passes_test(is_owner)
+def manage_bookings(request):
+    bookings = Booking.objects.filter(status='pending').select_related('customer').prefetch_related('services')
+    return render(request, 'bookings/manage_bookings.html', {'bookings': bookings})
 
-def handle_get_request(request):
-    form = MainMembersForm()
-    # Set default branch to JABULANI
-    form.fields['branch'].initial = 'JABULANI'
-    return render(request, 'main_app/add_main_member.html', {'form': form})
 
-def calculate_number_of_dependants(dependent_first_names):
-    return len([name for name in dependent_first_names if name.strip()])
+@user_passes_test(is_owner)
+def approve_booking(request, booking_id):
+    # Existing approval logic...
+    booking = get_object_or_404(Booking, id=booking_id)
+    booking.status = 'approved'
+    booking.save()
+    
+    # Prepare email content
+    subject = 'Your booking has been approved'
+    message = render_to_string('bookings/booking_approved_email.html', {'booking': booking})
+    recipient_email = booking.customer.email
+    
+    send_mail(subject, message, settings.EMAIL_HOST_USER, [recipient_email])
+    
+    return redirect('bookings:manage_bookings')
 
-def save_main_member(form, number_of_dependants):
-    return MainMembers.objects.create(
-        name=form.cleaned_data['name'],
-        surname=form.cleaned_data['surname'],
-        address=form.cleaned_data['address'],
-        gender=form.cleaned_data['gender'],
-        branch=form.cleaned_data['branch'],
-        phone_number=form.cleaned_data['phone_number'],
-        card_number=form.cleaned_data['card_number'],
-        number_of_dependants=number_of_dependants,
-        registration_year=datetime.now().year
+@user_passes_test(is_owner)
+def reject_booking(request, booking_id):
+    booking = get_object_or_404(Booking, id=booking_id)
+    booking.status = 'rejected'
+    booking.save()
+    send_booking_notification(booking, 'rejected')
+    return redirect('bookings:manage_bookings')
+
+@user_passes_test(is_owner)
+def owner_dashboard(request):
+    today = timezone.now().date()
+    total_bookings = Booking.objects.count()
+    pending_bookings = Booking.objects.filter(status='pending').count()
+    approved_bookings = Booking.objects.filter(status='approved').count()
+    canceled_bookings = Booking.objects.filter(status='canceled').count()
+    today_bookings = Booking.objects.filter(booking_date=today).count()
+    
+    context = {
+        'total_bookings': total_bookings,
+        'pending_bookings': pending_bookings,
+        'approved_bookings': approved_bookings,
+        'canceled_bookings': canceled_bookings,
+        'today_bookings': today_bookings,
+    }
+    return render(request, 'bookings/owner_dashboard.html', context)
+
+
+def get_bookings(request):
+    bookings = Booking.objects.all()
+    events = []
+    for booking in bookings:
+        # Create a title based on the services booked
+        services_booked = ', '.join(service.name for service in booking.services.all())
+        title = services_booked if services_booked else "No Services Booked"
+        
+        events.append({
+            'title': title,
+            'start': f"{booking.booking_date}T{booking.booking_time}",
+            'url': reverse('bookings:booking_detail', args=[booking.id])
+        })
+    return JsonResponse(events, safe=False)
+
+
+def booking_detail(request, booking_id):
+    booking = get_object_or_404(Booking, id=booking_id)
+    services = booking.services.all()
+
+    # Calculate correct price
+    total_price = sum(Decimal(service.price) for service in services)
+    
+    # Update the database record with the correct price
+    if booking.total_amount != total_price:
+        booking.total_amount = total_price
+        booking.save()
+    
+    # Determine if the booking is fully paid
+    is_fully_paid = booking.payment_status == 'PAID'
+
+    # Calculate deposit amount (e.g., 50% of total price) if not fully paid
+    deposit_amount = Decimal('0') if is_fully_paid else total_price * Decimal('0.5')
+
+    # Calculate remaining balance
+    remaining_balance = Decimal('0') if is_fully_paid else total_price - deposit_amount
+
+    # Calculate total outstanding amount
+    total_outstanding = total_price - (total_price - remaining_balance)
+
+    # Determine booking type based on services
+    # If any service has 'lodge' or 'suite' in its name, it's a lodge booking
+    is_lodge_booking = any(
+        'lodge' in service.name.lower() or 
+        'suite' in service.name.lower() or
+        'room' in service.name.lower()
+        for service in services
     )
 
-def save_dependents(dependent_first_names, dependent_last_names, card_number):
-    for first_name, last_name in zip(dependent_first_names, dependent_last_names):
-        if first_name.strip():
-            Dependents.objects.create(
-                name=first_name,
-                surname=last_name,
-                card_number=card_number
-            )
-
-def validate_card_number_add(request):
-    card_number = request.GET.get('card_number', '')
-    exists = not MainMembers.objects.filter(card_number=card_number).exists()
-    return JsonResponse({'exists': exists})
-
-
-
-def add_dependent(request):
-    if request.method == 'POST':
-        form = DependentsForm(request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'Dependent added successfully!')
-            return redirect('dependent_list')
-    else:
-        form = DependentsForm()
-    return render(request, 'main_app/add_dependent.html', {'form': form})
-
-@permission_required('main_app.add_treasury', raise_exception=True)
-def add_treasury(request):
-    if request.method == 'POST':
-        form = TreasuryForm(request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'Treasury record added successfully!')
-            return redirect('treasury_list')
-    else:
-        form = TreasuryForm()
-    return render(request, 'main_app/add_treasury.html', {'form': form})
-
-
-def add_treasury_dep(request):
-    if request.method == 'POST':
-        form = TreasuryDepForm(request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'Treasury dependent record added successfully!')
-            return redirect('treasury_dep_list')
-    else:
-        form = TreasuryDepForm()
-    return render(request, 'main_app/add_treasury_dep.html', {'form': form})
-
-def validate_card_number(request):
-    card_number = request.GET.get('card_number', None)
-    data = {
-        'exists': MainMembers.objects.filter(card_number=card_number).exists()
+    context = {
+        'booking': booking,
+        'total_price': total_price,
+        'deposit_amount': deposit_amount,
+        'remaining_balance': remaining_balance,
+        'total_outstanding': total_outstanding,
+        'number_of_people': booking.number_of_people,
+        'is_lodge_booking': is_lodge_booking,  # Add this to determine label in template
     }
-    return JsonResponse(data)
-
-# List views
+    return render(request, 'bookings/booking_detail_modal.html', context)
 
 
-
-def member_list(request):
-    # Fetch members ordered by surname and name
-    members = MainMembers.objects.order_by('surname', 'name')
-
-    # Fetch pictures using raw SQL (since Member_Pictures is not a Django model)
-    with connection.cursor() as cursor:
-        cursor.execute("""
-            SELECT Branch_Member_Number, picture_data 
-            FROM Member_Pictures
-        """)
-        pictures = dict(cursor.fetchall())
-
-        # Fetch dependent counts using raw SQL
-        cursor.execute("""
-            SELECT Card_Number, COUNT(*) as dependent_count
-            FROM Dependents
-            GROUP BY Card_Number
-        """)
-        dependent_counts = dict(cursor.fetchall())
-
-    # Enrich member data
-    for member in members:
-        # Add picture URL
-        picture_data = pictures.get(member.branch_member_number)
-        member.picture_url = (
-            f"data:image/jpeg;base64,{b64encode(picture_data).decode()}"
-            if picture_data
-            else '/static/default-profile.jpg'
-        )
-
-        # Add dependent count
-        member.dependent_count = dependent_counts.get(member.card_number, 0)
-
-    # Render the template
-    return render(request, 'main_app/member_list.html', {'members': members})
-
-
-def upload_member_picture(request, branch_member_number):
-    if request.method == 'POST' and request.FILES.get('picture'):
-        picture = request.FILES['picture']
-        picture_data = picture.read()
-        
-        with connection.cursor() as cursor:
-            cursor.execute("""
-                INSERT INTO Member_Pictures (Branch_Member_Number, picture_data)
-                VALUES (%s, %s)
-                ON DUPLICATE KEY UPDATE picture_data = VALUES(picture_data)
-            """, [branch_member_number, picture_data])
-            
-        return JsonResponse({'success': True})
-    return JsonResponse({'success': False}, status=400)
-
-
-
-
-
-def dependent_list(request):
-    dependents = Dependents.objects.all()
-    return render(request, 'main_app/dependent_list.html', {'dependents': dependents})
-
-@permission_required('main_app.view_treasury', raise_exception=True)
-def treasury_list(request):
-    treasury_records = Treasury.objects.all()
-    return render(request, 'main_app/treasury_list.html', {'treasury_records': treasury_records})
-
-@permission_required('main_app.view_treasurydep', raise_exception=True)
-def treasury_dep_list(request):
-    with connection.cursor() as cursor:
-        cursor.execute("""
-            SELECT idTreasury_Dep, card_number, amount, fund, payment_date, Reciept_Number 
-            FROM Treasury_Dep 
-            ORDER BY payment_date DESC
-        """)
-        
-        treasury_dep_records = [
-            {
-                'idTreasury_Dep': row[0],
-                'card_number': row[1],
-                'amount': row[2],
-                'fund': row[3],
-                'payment_date': row[4],
-                'Reciept_Number': row[5]
-            }
-            for row in cursor.fetchall()
-        ]
-    
-    return render(request, 'main_app/treasury_dep_list.html', {'treasury_dep_records': treasury_dep_records})
-
-class ActivityLogView(ListView):
-    model = ActivityLog
-    template_name = 'main_app/activity_log.html'
-    context_object_name = 'activities'
-    paginate_by = 20
-
-    def get_queryset(self):
-        return ActivityLog.objects.select_related('user', 'content_type').all()
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['total_activities'] = ActivityLog.objects.count()
-        return context
-    
-
-
-class ActivityLogView(FilterView):
-    model = ActivityLog
-    template_name = 'main_app/activity_log.html'
-    filterset_class = ActivityLogFilter
-    paginate_by = 20
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['total_activities'] = ActivityLog.objects.count()
-        return context
-
-
-
-class MemberUpdateView(UpdateView):
-    model = MainMembers
-    template_name = 'main_app/member_form.html'
-    fields = [
-        'card_number',
-        'name',
-        'surname',
-        'address',
-        'phone_number',
-        'branch',
-        'gender',
-        'registration_year',
-        'number_of_dependants',
-        'branch_member_number'
-    ]
-    success_url = reverse_lazy('member_list')
-
-
-
-def member_payments(request, card_number):
-    with connection.cursor() as cursor:
-        cursor.execute("""
-            SELECT fund, amount, Fund_Date_Year, Fund_Date_Month, payment_date, receipt_number 
-            FROM Treasury 
-            WHERE idMain_Member = %s
-            ORDER BY payment_date DESC
-        """, [card_number])
-        
-        payments = [
-            {
-                'fund': row[0],
-                'amount': row[1],
-                'Fund_Date_Year': row[2],
-                'Fund_Date_Month': row[3],
-                'payment_date': row[4].strftime('%Y-%m-%d'),
-                'receipt_number': row[5]
-            }
-            for row in cursor.fetchall()
-        ]
-        
-    return JsonResponse(payments, safe=False)
-
-
-
-
-def member_dependents(request, card_number):
-    with connection.cursor() as cursor:
-        cursor.execute("""
-            SELECT idDependents, name, surname 
-            FROM Dependents 
-            WHERE Card_Number = %s
-            ORDER BY name
-        """, [card_number])
-        
-        dependents = [
-            {
-                'idDependents': row[0],
-                'name': row[1],
-                'surname': row[2]
-            }
-            for row in cursor.fetchall()
-        ]
-        
-    return JsonResponse(dependents, safe=False)
-
-@permission_required('main_app.add_treasury', raise_exception=True)
-def add_treasury(request):
+@login_required
+def book_service(request, pk):
+    service = get_object_or_404(Service, pk=pk)
     if request.method == 'POST':
-        try:
-            # Validate input data
-            fund_types = request.POST.getlist('fund[]')
-            fund_years = request.POST.getlist('fund_date_year[]')
-            amounts = request.POST.getlist('amount[]')
-            idmain_member = request.POST.get('idmain_member')
-            payment_date = request.POST.get('payment_date')
-            receipt_number = request.POST.get('receipt_number')
-            fund_months = request.POST.getlist('fund_date_month[]')
+        form = BookingForm(request.POST)
+        if form.is_valid():
+            booking = form.save(commit=False)
+            booking.customer = request.user
+            booking.save()
+            booking.services.add(service)
+            messages.success(request, 'Your booking has been successfully created!')
+            return redirect('bookings:my_bookings')  # Include the namespace here
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+                form = BookingForm(initial={
+            'customer_name': request.user.first_name,
+            'customer_surname': request.user.last_name,
+        })
+    return render(request, 'bookings/book_service.html', {'form': form, 'service': service})
 
-            # Comprehensive input validation
-            if not all([fund_types, fund_years, amounts, idmain_member, 
-                        payment_date, receipt_number, fund_months]):
-                return JsonResponse({
-                    'success': False, 
-                    'error': 'All fields are required'
-                }, status=400)
+@login_required
+def booking_list(request):
+    bookings = Booking.objects.filter(customer=request.user).order_by('booking_date', 'booking_time')
+    return render(request, 'bookings/booking_list.html', {'bookings': bookings})
 
-            # Validate list lengths match
-            if not (len(fund_types) == len(fund_years) == 
-                    len(amounts) == len(fund_months)):
-                return JsonResponse({
-                    'success': False, 
-                    'error': 'Mismatched input lengths'
-                }, status=400)
+def is_staff(user):
+    return user.is_staff
 
-            # Prepare treasury objects for bulk creation
-            treasury_objects = []
-            for i in range(len(fund_types)):
-                try:
-                    # Robust parsing and conversion
-                    years = json.loads(fund_years[i])
-                    amount = float(amounts[i])
-                except (ValueError, json.JSONDecodeError) as e:
-                    return JsonResponse({
-                        'success': False, 
-                        'error': f'Invalid data at index {i}: {str(e)}'
-                    }, status=400)
+@login_required
+@user_passes_test(is_staff)
+def service_list(request):
+    services = Service.objects.all()
+    return render(request, 'bookings/service_list.html', {'services': services})
 
-                # Create treasury objects for each year
-                treasury_objects.extend([
-                    Treasury(
-                        idmain_member=idmain_member,
-                        fund=fund_types[i],
-                        amount=amount,
-                        fund_date_year=int(year),
-                        fund_date_month=fund_months[i],
-                        payment_date=payment_date,
-                        receipt_number=receipt_number
-                    ) for year in years
-                ])
-
-            # Bulk create with error handling
-            if treasury_objects:
-                Treasury.objects.bulk_create(treasury_objects)
-            else:
-                return JsonResponse({
-                    'success': False, 
-                    'error': 'No treasury entries to create'
-                }, status=400)
-            
-            return JsonResponse({
-                'success': True, 
-                'redirect_url': reverse('treasury_list')
-            })
-        
-        except Exception as e:
-            # Catch-all error handling
-            return JsonResponse({
-                'success': False, 
-                'error': f'Unexpected error: {str(e)}'
-            }, status=500)
-    
-    # GET request handling remains identical
-    form = TreasuryForm()
-    current_year = datetime.now().year
-    years = range(current_year - 5, current_year + 3)
-    
-    return render(request, 'main_app/add_treasury.html', {
-        'form': form,
-        'years': years
-    })
-
-
-@permission_required('main_app.add_treasurydep', raise_exception=True)
-def add_treasury_dep(request):
+@login_required
+@user_passes_test(is_staff)
+def service_create(request):
     if request.method == 'POST':
-        form = TreasuryDepForm(request.POST)
+        form = ServiceForm(request.POST)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Treasury dependent record added successfully!')
-            return redirect('treasury_dep_list')
+            messages.success(request, 'Service created successfully!')
+            return redirect('bookings:services')  # Redirects to services page
     else:
-        form = TreasuryDepForm()
-    return render(request, 'main_app/add_treasury_dep.html', {'form': form})
+        form = ServiceForm()
+    return render(request, 'bookings/service_form.html', {'form': form})
+
+@login_required
+@user_passes_test(is_staff)
+def service_update(request, pk):
+    service = get_object_or_404(Service, pk=pk)
+    if request.method == 'POST':
+        form = ServiceForm(request.POST, instance=service)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Service updated successfully!')
+            return redirect('bookings:services')  # Changed from 'service_list' to 'services'
+    else:
+        form = ServiceForm(instance=service)
+    return render(request, 'bookings/service_form.html', {'form': form, 'editing': True})
 
 
-def validate_card_number(request):
-    card_number = request.GET.get('card_number', '')
+@login_required
+@user_passes_test(is_staff)
+def service_delete(request, pk):
+    service = get_object_or_404(Service, pk=pk)
+    if request.method == 'POST':
+        service.delete()
+        return redirect('service_list')
+    return render(request, 'bookings/service_confirm_delete.html', {'service': service})
+
+def get_available_rooms(service, booking_date, duration=1):
+    available_rooms = []
+    check_date = datetime.strptime(booking_date, '%Y-%m-%d').date()
+    rooms = Room.objects.filter(room_type=service)
     
-    if not card_number:
-        return JsonResponse({'exists': False, 'message': 'Please enter a card number'})
+    for room in rooms:
+        if room.is_available(check_date, duration):
+            available_rooms.append(room)
+            
+    return available_rooms
+
+
+
+
+
+@login_required
+def create_booking(request):
+    booking_type = request.GET.get('type')
+    initial_data = {
+        'booking_date': request.GET.get('booking_date')
+    }
+
+    if request.method == 'POST':
+        form = BookingForm(request.POST)
+        if form.is_valid():
+            booking = form.save(commit=False)
+            booking.customer = request.user
+            
+            # Store services temporarily before saving
+            selected_services = form.cleaned_data.get('services', [])
+            booking._temp_services = selected_services
+            
+            number_of_people = form.cleaned_data['number_of_people']
+            stay_duration = int(request.POST.get('stay_duration', 1))
+            
+            # Calculate total price
+            total_price = sum(
+            service.price * 
+            (stay_duration if booking_type == 'lodge' else 1)
+            for service in selected_services
+        )
+            booking.total_amount = total_price
+
+            # Handle payment status
+            if request.POST.get('payment_amount') == 'FULL':
+                payment_type = request.POST.get('payment_type')
+                if payment_type == 'EFT':
+                    booking.status = 'pending'  # EFT payments should be pending until confirmed
+                else:
+                    booking.status = 'approved'  # Other payment methods can be approved immediately
+                booking.payment_status = 'PAID'
+                booking.deposit_paid = True
+                booking.deposit_amount = total_price
+                booking.outstanding_amount = 0
+                booking.final_payment_method = request.POST.get('payment_type')
+                booking.final_payment_date = timezone.now()
+            elif request.POST.get('payment_amount') == 'DEPOSIT':
+                booking.deposit_paid = True
+                booking.deposit_amount = total_price * Decimal('0.5')
+                booking.payment_status = 'DEPOSIT_PAID'
+                booking.outstanding_amount = total_price * Decimal('0.5')
+                booking.deposit_payment_method = request.POST.get('payment_type')
+                booking.deposit_payment_date = timezone.now()
+            else:
+                booking.deposit_amount = 0
+                booking.payment_status = 'UNPAID'
+                booking.outstanding_amount = total_price
+
+            # Generate booking number
+            counter, _ = BookingNumberCounter.objects.get_or_create(booking_type=booking_type)
+            counter.last_number += 1
+            counter.save()
+            prefix = 'SPA' if booking_type == 'spa' else 'LODGE'
+            formatted_number = f"{counter.last_number:08d}"
+            booking.booking_number = f"{prefix}-{formatted_number}"
+
+            # Set end date
+            booking.end_date = booking.booking_date + timedelta(days=stay_duration - 1)
+            
+            # Save booking first to get ID
+            booking.save()
+            
+            # Now set the many-to-many relationship
+            booking.services.set(selected_services)
+
+            # Handle room assignment for lodge bookings
+            if booking_type == 'lodge':
+                for service in selected_services:
+                    room_id = request.POST.get(f'room_{service.id}')
+                    if room_id:
+                        room = Room.objects.get(id=room_id)
+                        if room.is_available(form.cleaned_data['booking_date'], stay_duration):
+                            booking.room = room
+                            booking.save()
+                        else:
+                            messages.error(request, f'Room {room.number} is no longer available for the selected dates.')
+                            return redirect('bookings:create_booking')
+
+            messages.success(request, 'Booking created successfully!')
+            return redirect('bookings:my_bookings')
+        else:
+            messages.error(request, 'Please correct the errors in the form.')
+
+    else:
+        form = BookingForm(initial=initial_data)
+
+    services = Service.objects.filter(service_type=booking_type)
+    booking_date = request.GET.get('booking_date')
     
-    try:
-        card_number = int(card_number)
-        exists = MainMembers.objects.filter(card_number=card_number).exists()
-        return JsonResponse({'exists': exists})
-    except ValueError:
-        return JsonResponse({'exists': False, 'message': 'Please enter a valid number'})
-
-
-def validate_card_number_add(request):
-    card_number = request.GET.get('card_number', '')
-    exists = not MainMembers.objects.filter(card_number=card_number).exists()
-    return JsonResponse({'exists': exists})
-
-
-def dependent_payments(request, dependent_id):
-    with connection.cursor() as cursor:
-        cursor.execute("""
-            SELECT fund, amount, Fund_Date_Year, Fund_Date_Month, payment_date, Reciept_Number 
-            FROM Treasury_Dep 
-            WHERE Dependent_ID = %s
-            ORDER BY payment_date DESC
-        """, [dependent_id])
-        
-        payments = [
-            {
-                'fund': row[0],
-                'amount': row[1],
-                'Fund_Date_Year': row[2],
-                'Fund_Date_Month': row[3],
-                'payment_date': row[4].strftime('%Y-%m-%d'),
-                'reciept_number': row[5]
-            }
-            for row in cursor.fetchall()
+    context = {
+        'form': form,
+        'booking_type': booking_type,
+        'services': services,
+        'rooms': Room.objects.all(),
+        'available_rooms': json.dumps({
+        str(service.id): [
+        {'id': room.id, 'number': room.number, 'description': getattr(room, 'description', '')}
+        for room in get_available_rooms(service, booking_date)
         ]
+        for service in services if service.service_type == 'lodge'
+        })
+
+    }
+    return render(request, 'bookings/create_booking.html', context)
+
+
+def mark_fully_paid(request, order_id):
+    order = get_object_or_404(Booking, id=order_id)
+    if request.method == 'POST':
+        payment_method = request.POST.get('payment_type')
+        # Update the order to mark it as fully paid
+        order.outstanding_amount = 0
+        order.status = 'approved'
+        order.payment_status = 'PAID'
+        order.final_payment_method = payment_method
+        order.final_payment_date = timezone.now()
+        order.processed_by = request.user
+        order.save()
+        
+        messages.success(request, f'Payment of R{order.outstanding_amount} processed successfully via {payment_method}')
+        return redirect('bookings:recon_report')
+
+    return redirect('bookings:recon_report')
+
+
+
+
+
+
+
+
+
+
+
+
+
+def create_booking_view(request):
+    form = BookingForm(request.GET or None)
+    if request.method == 'POST':
+        form = BookingForm(request.POST)
+        if form.is_valid():
+            form.save()
+            # Handle successful booking creation
+    return render(request, 'bookings/create_booking.html', {'form': form})
+
+
+
+
+
+
+def is_staff(user):
+    return user.is_staff
+
+
+def generate_booking_pdf(request, booking_id):
+    booking = get_object_or_404(Booking, id=booking_id)
     
-    return JsonResponse(payments, safe=False)
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=18)
+    
+    elements = []
+    
+    styles = getSampleStyleSheet()
+    styles.add(ParagraphStyle(name='CustomHeading1', parent=styles['Heading1'], fontSize=16, textColor=colors.darkblue, spaceAfter=12))
+    styles.add(ParagraphStyle(name='CustomHeading2', parent=styles['Heading2'], fontSize=14, textColor=colors.darkblue, spaceAfter=6))
+    
+    logo_path = finders.find('images/logo.png')
+    if logo_path:
+        logo = Image(logo_path, width=2*inch, height=1*inch)
+        elements.append(logo)
+    else:
+        elements.append(Paragraph("Logo not found", styles['Normal']))
+    
+    elements.append(Spacer(1, 12))
+    elements.append(Paragraph("Booking Confirmation", styles['CustomHeading1']))
+    
+    # Customer Information Table
+    customer_data = [
+        ['Customer', f"{booking.customer_name} {booking.customer_surname}"],
+        ['Booking Date', booking.booking_date],
+        ['Time', booking.booking_time],
+        ['Number of People', booking.number_of_people],
+    ]
+    customer_table = Table(customer_data, colWidths=[2*inch, 4*inch])
+    customer_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (0, -1), colors.lightgrey),
+        ('TEXTCOLOR', (0, 0), (-1, -1), colors.darkblue),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ('BACKGROUND', (1, 0), (-1, -1), colors.beige),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+    ]))
+    elements.append(customer_table)
+    elements.append(Spacer(1, 12))
+    
+    elements.append(Paragraph("Services", styles['CustomHeading2']))
+    
+    # Services Table with per-person calculations
+# Services Table with fixed pricing (not per-person)
+    services_data = [['Service', 'Price', 'Total']]
+    for service in booking.services.all():
+        service_price = service.price
+        # Don't multiply by number_of_people
+        total_service_price = service_price
+        services_data.append([
+            service.name, 
+            f"R{service_price:.2f}",
+            f"R{total_service_price:.2f}"
+        ])
+    
+    services_table = Table(services_data, colWidths=[3*inch, 1.5*inch, 1.5*inch])
+    services_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+    ]))
+    elements.append(services_table)
+    elements.append(Spacer(1, 12))
+    
+ # Calculate totals
+    total_price = booking.total_amount
+    if booking.payment_status == 'PAID':
+        deposit_amount = total_price
+        remaining_balance = Decimal('0')
+    elif booking.deposit_paid:
+        deposit_amount = booking.deposit_amount
+        remaining_balance = booking.outstanding_amount
+    else:
+        deposit_amount = Decimal('0')
+        remaining_balance = total_price
+
+    
+    # Summary Table
+    summary_data = [
+        ['Total Amount', f"R{total_price:.2f}"],
+        ['Deposit Paid', f"R{deposit_amount:.2f}"],
+        ['Remaining Balance', f"R{remaining_balance:.2f}"],
+    ]
+    summary_table = Table(summary_data, colWidths=[4*inch, 2*inch])
+    summary_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (0, -1), colors.lightgrey),
+        ('TEXTCOLOR', (0, 0), (-1, -1), colors.darkblue),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ('BACKGROUND', (1, 0), (-1, -1), colors.beige),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+    ]))
+    elements.append(summary_table)
+    
+    doc.build(elements)
+    buffer.seek(0)
+    
+    return FileResponse(buffer, as_attachment=True, filename=f'booking_confirmation_{booking_id}.pdf')
 
 
+def register(request):
+    if request.method == 'POST':
+        form = CustomUserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            return redirect('login')  # Replace 'home' with your home page URL name
+    else:
+        form = CustomUserCreationForm()
+    return render(request, 'registration/register.html', {'form': form})
 
 
 def login_view(request):
     if request.method == 'POST':
-        username = request.POST.get('username')
-        password = request.POST.get('password')
-        
-        user = authenticate(request, username=username, password=password)
-        
-        if user is not None:
-            if not user.is_active:
-                messages.add_message(request, messages.ERROR, 'Your account is awaiting administrator approval.')
-                return render(request, 'registration/login.html')
-            
+        form = AuthenticationForm(request, data=request.POST)
+        if form.is_valid():
+            user = form.get_user()
             login(request, user)
-            return redirect('member_list')
-        else:
-            messages.add_message(request, messages.ERROR, 'Invalid username or password')
-            return render(request, 'registration/login.html')
+            return redirect('bookings:booking_calendar')  # Redirects to booking calendar after login
+    else:
+        form = AuthenticationForm()
+    return render(request, 'registration/login.html', {'form': form})
+
+
+@login_required
+def edit_booking(request, booking_id):
+    booking = get_object_or_404(Booking, id=booking_id, customer=request.user, status='pending')
     
-    return render(request, 'registration/login.html')
-
-
-
-
-
-@login_required
-def home_view(request):
-    return render(request, 'main_app/home.html')
-
-@login_required
-def get_dependent_payments(request, card_number):
-    with connection.cursor() as cursor:
-        cursor.execute("""
-            SELECT 
-                d.name,
-                d.surname,
-                td.Fund,
-                td.Amount,
-                td.Fund_Date_Year,
-                td.Reciept_Number,
-                td.Payment_Date
-            FROM Treasury_Dep td
-            JOIN Dependents d ON td.Dependent_ID = d.idDependents
-            WHERE td.Card_Number = %s
-            ORDER BY td.Payment_Date DESC
-        """, [card_number])
-        
-        columns = [col[0] for col in cursor.description]
-        payments = [dict(zip(columns, row)) for row in cursor.fetchall()]
-        
-    return JsonResponse(payments, safe=False)
-
-def signup_view(request):
     if request.method == 'POST':
-        name = request.POST.get('name')
-        surname = request.POST.get('surname')
-        email = request.POST.get('email')
-        password = request.POST.get('password')
-        confirm_password = request.POST.get('confirm_password')
+        form = BookingForm(request.POST, instance=booking)
+        if form.is_valid():
+            booking = form.save(commit=False)
+            services = request.POST.getlist('services')
+            total_price = sum(Service.objects.get(id=service_id).price for service_id in services)
+            
+            if form.cleaned_data['deposit_paid']:
+                booking.deposit_amount = total_price * Decimal('0.5')
+            
+            booking.save()
+            booking.services.set(services)
+            messages.success(request, 'Booking updated successfully!')
+            return redirect('bookings:my_bookings')
+    else:
+        form = BookingForm(instance=booking)
         
-        if password != confirm_password:
-            messages.error(request, 'Passwords do not match')
-            return render(request, 'registration/signup.html')
+    # Filter services based on the booking's service type
+    service_type = booking.services.first().service_type if booking.services.exists() else None
+    services = Service.objects.filter(service_type=service_type)
+    
+    return render(request, 'bookings/create_booking.html', {
+        'form': form,
+        'editing': True,
+        'booking': booking,
+        'services': services,
+        'booking_type': service_type
+    })
+
+
+
+def get_day_bookings(request):
+    selected_date = request.GET.get('date')
+    if not selected_date:
+        # If no date is provided, default to today
+        selected_date = timezone.now().date()
+    else:
+        # Parse the date string into a date object
+        selected_date = datetime.strptime(selected_date, '%Y-%m-%d').date()
+
+    # Get all bookings for the selected date
+    bookings = Booking.objects.filter(
+        booking_date=selected_date
+    ).prefetch_related('services')
+
+    # Generate time slots for the day (e.g., from 9 AM to 5 PM every hour)
+    time_slots = []
+    start_hour = 9
+    end_hour = 17  # 5 PM
+    for hour in range(start_hour, end_hour + 1):
+        current_time = time(hour, 0)  # Creates time object for the hour
+
+        # Get bookings for this time slot
+        slot_bookings = bookings.filter(booking_time=current_time)
+        booked_services = [{'id': service.id, 'name': service.name} for booking in slot_bookings for service in booking.services.all()]
+
+        # Create the slot dictionary
+        slot = {
+            'hour': f"{hour:02d}",
+            'minutes': "00",
+            'booked_services': booked_services
+        }
+
+        time_slots.append(slot)
+
+    # Get all available services
+    available_services = Service.objects.all()
+
+    context = {
+        'selected_date': selected_date,
+        'time_slots': time_slots,
+        'services': available_services,
+    }
+
+    return render(request, 'bookings/day_bookings.html', context)
+
+def is_staff_user(user):
+    return user.is_authenticated and user.is_staff
+
+def staff_register(request):
+    if request.method == 'POST':
+        form = StaffUserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            return redirect('bookings:staff_dashboard')  # Redirect to staff dashboard
+    else:
+        form = StaffUserCreationForm()
+    return render(request, 'registration/staff_register.html', {'form': form})
+
+def staff_login(request):
+    if request.method == 'POST':
+        form = AuthenticationForm(request, data=request.POST)
+        if form.is_valid():
+            user = authenticate(
+                username=form.cleaned_data['username'],
+                password=form.cleaned_data['password']
+            )
+            if user is not None and user.is_staff:
+                login(request, user)
+                return redirect('bookings:staff_dashboard')
+            else:
+                form.add_error(None, 'You are not authorized to access this area.')
+    else:
+        form = AuthenticationForm()
+    return render(request, 'registration/staff_login.html', {'form': form})
+
+@user_passes_test(is_staff_user)
+def staff_dashboard(request):
+    # Implement staff dashboard logic here
+    return render(request, 'bookings/staff_dashboard.html')
+
+
+def get_lodge_bookings(request):
+    bookings = Booking.objects.filter(services__service_type='lodge')
+    events = []
+    for booking in bookings:
+        title = f"{booking.customer_name}"
+        if booking.room:
+            title += f" - Room {booking.room.number}"
+        events.append({
+            'title': title,
+            'start': f"{booking.booking_date.isoformat()}T{booking.booking_time}",  # Include time
+            'url': reverse('bookings:booking_detail', args=[booking.id])
+        })
+    return JsonResponse(events, safe=False)
+
+def get_spa_bookings(request):
+    bookings = Booking.objects.filter(services__service_type='spa')
+    events = []
+    for booking in bookings:
+        events.append({
+            'title': f"{booking.customer_name}",
+            'start': f"{booking.booking_date.isoformat()}T{booking.booking_time}",  # Include time
+            'url': reverse('bookings:booking_detail', args=[booking.id])
+        })
+    return JsonResponse(events, safe=False)
+
+
+
+
+def recon_report(request):
+    # Filter orders with outstanding balance greater than zero
+    outstanding_orders = Booking.objects.filter(outstanding_amount__gt=0)
+    return render(request, 'bookings/recon_report.html', {'orders': outstanding_orders})
+
+
+def mark_fully_paid(request, order_id):
+    order = get_object_or_404(Booking, id=order_id)
+    if request.method == 'POST':
+        payment_method = request.POST.get('payment_type')  # This matches the hidden input name in the form
+        order.outstanding_amount = 0
+        order.status = 'approved'
+        order.payment_status = 'PAID'
+        order.final_payment_method = payment_method
+        order.final_payment_date = timezone.now()
+        order.processed_by = request.user
+        order.save()
         
-        try:
-            # Create user with is_active set to False
-            user = User.objects.create_user(
-                username=email, 
-                email=email, 
-                password=password,
-                first_name=name,
-                last_name=surname,
-                is_active=False  # Set user to inactive by default
+        messages.success(request, f'Payment of R{order.outstanding_amount} processed successfully via {payment_method}')
+        return redirect('bookings:recon_report')
+
+    
+    
+
+def end_of_day_report(request):
+    selected_date = request.GET.get('date')  # Get the selected date from the request
+    totals = []
+    department_stats = None
+    bookings = None
+    payment_total = 0
+
+    if selected_date:
+        # Parse the selected date to ensure it's in the correct format
+        selected_date = parse_date(selected_date)
+
+        # Filter bookings by the selected date using the created_at field
+        bookings = Booking.objects.filter(created_at__date=selected_date)
+        
+        # Get payment method totals
+        totals = bookings.values('payment_type').annotate(
+            total_amount=Sum('total_amount')
+        ).order_by('payment_type')
+        
+        # Calculate total payments
+        payment_total = bookings.aggregate(total=Sum('total_amount'))['total'] or 0
+        
+        # Get department statistics - determine type based on services
+        # A booking is considered a 'lodge' booking if any of its services are of type 'lodge'
+        # Otherwise, it's considered a 'spa' booking
+        spa_bookings = []
+        lodge_bookings = []
+        
+        for booking in bookings:
+            service_types = set(booking.services.values_list('service_type', flat=True))
+            if 'lodge' in service_types:
+                lodge_bookings.append(booking)
+            else:
+                spa_bookings.append(booking)
+        
+        spa_total = sum(booking.total_amount for booking in spa_bookings)
+        lodge_total = sum(booking.total_amount for booking in lodge_bookings)
+        
+        department_stats = {
+            'spa': {
+                'count': len(spa_bookings),
+                'total': spa_total
+            },
+            'lodge': {
+                'count': len(lodge_bookings),
+                'total': lodge_total
+            },
+            'total': {
+                'count': bookings.count(),
+                'total': payment_total
+            }
+        }
+
+    return render(request, 'bookings/end_of_day_report.html', {
+        'totals': totals,
+        'selected_date': selected_date,
+        'department_stats': department_stats,
+        'bookings': bookings,
+        'payment_total': payment_total,
+    })
+
+
+    
+@require_http_methods(["GET", "POST"])
+def logout_view(request):
+    logout(request)
+    return redirect('bookings:login')
+
+@login_required(login_url='bookings:login')
+def booking_calendar(request):
+    if not request.user.is_authenticated:
+        messages.info(request, "Please log in to access the booking calendar.")
+    return render(request, 'bookings/booking_calendar.html')
+
+
+def is_available(self, check_date, duration=1):
+    from bookings.models import Booking
+    
+    if isinstance(check_date, str):
+        check_date = datetime.strptime(check_date, '%Y-%m-%d').date()
+    
+    end_date = check_date + timedelta(days=duration-1)
+    
+    overlapping_bookings = Booking.objects.filter(
+        room=self,
+        booking_date__lte=end_date,
+        end_date__gte=check_date,
+        status__in=['pending', 'approved']
+    ).exists()
+    
+    return not overlapping_bookings and self.status == 'available'
+
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib import messages
+from .models import Booking, Employee, BookingEmployeeAssignment, Service
+from django.db.models import Q
+from datetime import datetime, timedelta
+
+def is_admin(user):
+    return user.is_staff
+
+@login_required
+@user_passes_test(is_admin)
+def spa_duties(request):
+    # Get filter parameters
+    date_filter = request.GET.get('date', datetime.today().strftime('%Y-%m-%d'))
+    status_filter = request.GET.get('status', 'all')
+    
+    try:
+        filter_date = datetime.strptime(date_filter, '%Y-%m-%d').date()
+    except ValueError:
+        filter_date = datetime.today().date()
+    
+    # Get all spa bookings for the selected date
+    spa_bookings = Booking.objects.filter(
+        services__service_type='spa',
+        booking_date=filter_date
+    ).distinct()
+    
+    if status_filter == 'assigned':
+        spa_bookings = spa_bookings.filter(
+            employee_assignments__isnull=False
+        )
+    elif status_filter == 'unassigned':
+        spa_bookings = spa_bookings.filter(
+            ~Q(id__in=BookingEmployeeAssignment.objects.values('booking_id'))
+        )
+    
+    # Get all employees
+    employees = Employee.objects.all().order_by('first_name')
+    
+    # Handle assignment form submission
+    if request.method == 'POST':
+        booking_id = request.POST.get('booking_id')
+        employee_id = request.POST.get('employee_id')
+        notes = request.POST.get('notes', '')
+        
+        if booking_id and employee_id:
+            booking = get_object_or_404(Booking, id=booking_id)
+            employee = get_object_or_404(Employee, id=employee_id)
+            
+            # Check if assignment already exists
+            assignment, created = BookingEmployeeAssignment.objects.get_or_create(
+                booking=booking,
+                employee=employee,
+                defaults={'notes': notes}
             )
             
-            # Add success message and redirect to login
-            messages.success(request, 'Account created. Awaiting administrator approval.')
-            return redirect('login')
-        
-        except Exception as e:
-            messages.error(request, f'Error creating account: {str(e)}')
-            return render(request, 'registration/signup.html')
+            if not created:
+                assignment.notes = notes
+                assignment.save()
+                messages.success(request, f"Updated assignment of {employee} to booking #{booking.booking_number}")
+            else:
+                messages.success(request, f"Assigned {employee} to booking #{booking.booking_number}")
+            
+            return redirect('bookings:spa_duties')
     
-    return render(request, 'registration/signup.html')
-
-def get_gender_distribution(request):
-    gender_data = MainMembers.objects.values('gender').annotate(
-        count=Count('pk')  # Use 'pk' instead of 'id'
-    ).order_by('gender')
+    # Get existing assignments for these bookings
+    booking_assignments = {}
+    for booking in spa_bookings:
+        assignments = BookingEmployeeAssignment.objects.filter(booking=booking)
+        if assignments.exists():
+            booking_assignments[booking.id] = assignments
     
-    data = {
-        'labels': [entry['gender'] for entry in gender_data],
-        'counts': [entry['count'] for entry in gender_data]
+    # Date navigation
+    prev_date = (filter_date - timedelta(days=1)).strftime('%Y-%m-%d')
+    next_date = (filter_date + timedelta(days=1)).strftime('%Y-%m-%d')
+    
+    context = {
+        'spa_bookings': spa_bookings,
+        'employees': employees,
+        'booking_assignments': booking_assignments,
+        'filter_date': filter_date,
+        'status_filter': status_filter,
+        'prev_date': prev_date,
+        'next_date': next_date,
     }
     
-    return JsonResponse(data)
+    return render(request, 'bookings/spa_duties.html', context)
 
-
-
+@login_required
+@user_passes_test(is_admin)
+def remove_employee_assignment(request, assignment_id):
+    if request.method == 'POST':
+        assignment = get_object_or_404(BookingEmployeeAssignment, id=assignment_id)
+        booking_number = assignment.booking.booking_number
+        employee_name = f"{assignment.employee.first_name} {assignment.employee.last_name}"
+        
+        assignment.delete()
+        messages.success(request, f"Removed {employee_name} from booking #{booking_number}")
+    
+    return redirect('bookings:spa_duties')
