@@ -11,7 +11,7 @@
         <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white transform hover:scale-105 transition-transform duration-200 cursor-pointer">
             <div class="flex justify-between items-start">
                 <div>
-                    <p class="text-sm opacity-80">Total Members</p>
+                    <p class="text-sm opacity-80">Members</p>
                     <h3 class="text-3xl font-bold mt-2">{{ total_members }}</h3>
                     <p class="text-sm mt-2">↑ 12% from last month</p>
                 </div>
@@ -22,6 +22,34 @@
                 </div>
             </div>
         </div>
+        <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white transform hover:scale-105 transition-transform duration-200 cursor-pointer">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-sm opacity-80">Dependents</p>
+                    <h3 class="text-3xl font-bold mt-2">{{ total_dependents }}</h3>
+                    <p class="text-sm mt-2">↑ 8% from last month</p>
+                </div>
+                <div class="bg-green-400 rounded-lg p-2">
+                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"></path>
+                    </svg>
+                </div>
+            </div>
+        </div>
+        <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white transform hover:scale-105 transition-transform duration-200 cursor-pointer">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-sm opacity-80">Annual Payments ({{ current_year }})</p>
+                    <h3 class="text-3xl font-bold mt-2">Value: R{{ total_annual_value }}</h3>
+                    <h3 class="text-3xl font-bold mt-2">Count: {{ total_annual_count }}</h3>
+                </div>
+                <div class="bg-purple-400 rounded-lg p-2">
+                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-2.21 0-4 1.79-4 4v3h8v-3c0-2.21-1.79-4-4-4zm-6 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-2.21 0-4 1.79-4 4v3h8v-3c0-2.21-1.79-4-4-4z"></path>
+                    </svg>
+                </div>
+            </div>
+        </div>        
             <!-- New Gender Distribution Chart -->
         <div class="bg-white p-4 rounded-lg shadow-md">
         <canvas id="genderDistribution"></canvas>
