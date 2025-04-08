@@ -40,6 +40,7 @@ from django.utils import timezone
 from PIL import Image
 from io import BytesIO
 from django.db.models import Sum
+from django.db import transaction
 
 
 
@@ -96,12 +97,61 @@ def upload_picture(request):
 
 
 
+from django.db import transaction
 
 def add_main_member(request):
     if request.method == 'POST':
-        return handle_post_request(request)
+        form = MainMembersForm(request.POST)
+        if form.is_valid():
+            try:
+                with transaction.atomic():
+                    # Process dependents
+                    dependent_first_names = request.POST.getlist('dependent_first_name[]')
+                    dependent_last_names = request.POST.getlist('dependent_last_name[]')
+                    number_of_dependants = calculate_number_of_dependants(dependent_first_names)
+                    
+                    # Get church title
+                    church_title = request.POST.get('church_title', '')
+                    
+                    # Save main member
+                    main_member = MainMembers.objects.create(
+                        name=form.cleaned_data['name'],
+                        surname=form.cleaned_data['surname'],
+                        address=form.cleaned_data['address'],
+                        gender=form.cleaned_data['gender'],
+                        branch=form.cleaned_data['branch'],
+                        phone_number=form.cleaned_data['phone_number'],
+                        card_number=form.cleaned_data['card_number'],
+                        church_title=church_title,
+                        number_of_dependants=number_of_dependants,
+                        registration_year=datetime.now().year
+                    )
+                    
+                    # Save dependents
+                    for first_name, last_name in zip(dependent_first_names, dependent_last_names):
+                        if first_name.strip():
+                            Dependents.objects.create(
+                                name=first_name,
+                                surname=last_name,
+                                card_number=main_member.card_number
+                            )
+                
+                return JsonResponse({'success': True})
+            except Exception as e:
+                import traceback
+                print("Error saving member:", str(e))
+                print(traceback.format_exc())
+                return JsonResponse({'success': False, 'error': str(e)})
+        else:
+            return JsonResponse({'success': False, 'errors': form.errors})
     else:
-        return handle_get_request(request)
+        form = MainMembersForm()
+        # Set default branch to JABULANI
+        form.fields['branch'].initial = 'JABULANI'
+        return render(request, 'main_app/add_main_member.html', {'form': form})
+
+
+
 
 def handle_post_request(request):
     form = MainMembersForm(request.POST)
@@ -113,13 +163,17 @@ def handle_post_request(request):
     dependent_last_names = request.POST.getlist('dependent_last_name[]')
     number_of_dependants = calculate_number_of_dependants(dependent_first_names)
 
-    # Save the main member
-    main_member = save_main_member(form, number_of_dependants)
+    # Get church_title from POST data
+    church_title = request.POST.get('church_title', '')
+    
+    # Save the main member using the updated function
+    main_member = save_main_member(form, number_of_dependants, church_title)
 
     # Save the dependents
     save_dependents(dependent_first_names, dependent_last_names, main_member.card_number)
 
     return JsonResponse({'success': True})
+
 
 def handle_get_request(request):
     form = MainMembersForm()
@@ -130,7 +184,7 @@ def handle_get_request(request):
 def calculate_number_of_dependants(dependent_first_names):
     return len([name for name in dependent_first_names if name.strip()])
 
-def save_main_member(form, number_of_dependants):
+def save_main_member(form, number_of_dependants, church_title=''):
     return MainMembers.objects.create(
         name=form.cleaned_data['name'],
         surname=form.cleaned_data['surname'],
@@ -139,6 +193,7 @@ def save_main_member(form, number_of_dependants):
         branch=form.cleaned_data['branch'],
         phone_number=form.cleaned_data['phone_number'],
         card_number=form.cleaned_data['card_number'],
+        church_title=church_title,  # Add the church_title
         number_of_dependants=number_of_dependants,
         registration_year=datetime.now().year
     )
@@ -342,7 +397,8 @@ class MemberUpdateView(UpdateView):
         'gender',
         'registration_year',
         'number_of_dependants',
-        'branch_member_number'
+        'branch_member_number',
+        'church_title' 
     ]
     success_url = reverse_lazy('member_list')
 

@@ -23,7 +23,7 @@ class MainMembers(models.Model):
     registration_year = models.IntegerField(db_column='Registration_Year', blank=True, null=True)
     number_of_dependants = models.IntegerField(db_column='Number_Of_Dependants')
     branch_member_number = models.CharField(db_column='Branch_Member_Number', max_length=10, unique=True)
-
+    church_title = models.CharField(max_length=45, blank=True, null=True)
     class Meta:
         managed = False
         db_table = 'Main_Members'
