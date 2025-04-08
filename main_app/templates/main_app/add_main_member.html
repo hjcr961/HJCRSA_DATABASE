@@ -36,30 +36,45 @@
                 {% csrf_token %}
                 
                 <!-- Main Member Section -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {% for field in form %}
-                    {% if field.name != 'branch_member_number' %}
-                    <div class="space-y-2">
-                        <label class="block text-sm font-medium text-gray-700">
-                            {{ field.label }}
-                        </label>
-                        {% if field.name == 'card_number' %}
-                        <div class="flex space-x-2">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {% for field in form %}
+                        {% if field.name != 'branch_member_number' %}
+                        <div class="space-y-2">
+                            <label class="block text-sm font-medium text-gray-700">
+                                {{ field.label }}
+                            </label>
+                            {% if field.name == 'card_number' %}
+                            <div class="flex space-x-2">
+                                {{ field|add_class:"mt-1 block w-full rounded-md border-2 border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" }}
+                                <button type="button" onclick="validateCardNumber()" class="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700">
+                                    Validate
+                                </button>
+                            </div>
+                            {% else %}
                             {{ field|add_class:"mt-1 block w-full rounded-md border-2 border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" }}
-                            <button type="button" onclick="validateCardNumber()" class="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700">
-                                Validate
-                            </button>
+                            {% endif %}
+                            {% if field.errors %}
+                            <p class="text-red-500 text-xs mt-1">{{ field.errors.0 }}</p>
+                            {% endif %}
                         </div>
-                        {% else %}
-                        {{ field|add_class:"mt-1 block w-full rounded-md border-2 border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" }}
                         {% endif %}
-                        {% if field.errors %}
-                        <p class="text-red-500 text-xs mt-1">{{ field.errors.0 }}</p>
-                        {% endif %}
+                        {% endfor %}
+                        
+                        <!-- Church Title field -->
+                        <div class="space-y-2">
+                            <label class="block text-sm font-medium text-gray-700">
+                                Church Title
+                            </label>
+                            <select name="church_title" id="id_church_title" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                <option value="">-- Select Title --</option>
+                                <option value="Overseerer">OVERSEERER</option>
+                                <option value="Reverend">REVEREND</option>
+                                <option value="Evangelist">EVANGELIST</option>
+                                <option value="Congregation">CONGREGANT</option>
+                                <option value="Mamkhokeli">MAMKHOKELI</option>
+                            </select>
+                        </div>
                     </div>
-                    {% endif %}
-                    {% endfor %}
-                </div>
 
                 <!-- Dependent Section with updated input styling -->
                 <div class="mt-8 border-t pt-8">
@@ -116,12 +131,18 @@
     function hideSaving() {
         document.getElementById('saving-indicator').classList.add('hidden');
     }
-
+// Add this to your existing JavaScript in the template
 document.getElementById('memberForm').addEventListener('submit', function(e) {
     e.preventDefault();
     showSaving();
     
     const formData = new FormData(this);
+    
+    // Debug: Log form data
+    console.log("Form data being submitted:");
+    for (let pair of formData.entries()) {
+        console.log(pair[0] + ': ' + pair[1]);
+    }
     
     fetch(this.action, {
         method: 'POST',
@@ -130,19 +151,33 @@ document.getElementById('memberForm').addEventListener('submit', function(e) {
             'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
         }
     })
-    .then(response => {
-        if (response.ok) {
-            // Don't hide the indicator, let it stay visible during redirect
+    .then(response => response.json())
+    .then(data => {
+        console.log("Response data:", data);
+        if (data.success) {
+            // Success - redirect to member list
             window.location.href = "{% url 'member_list' %}";
         } else {
-            hideSaving(); // Only hide if there's an error
+            // Error - show message
+            hideSaving();
+            if (data.errors) {
+                alert("Form validation errors: " + JSON.stringify(data.errors));
+            } else if (data.error) {
+                alert("Error: " + data.error);
+            } else {
+                alert("An unknown error occurred");
+            }
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        hideSaving(); // Only hide on error
+        hideSaving();
+        alert("An error occurred: " + error);
     });
-});    function validateCardNumber() {
+});
+
+
+    function validateCardNumber() {
         let cardNumber = document.getElementById('id_card_number').value;
         let indicator = document.getElementById('validating-indicator');
         
