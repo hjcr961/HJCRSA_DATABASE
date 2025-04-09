@@ -22,8 +22,8 @@
                 </label>
                 <select name="church_title" id="id_church_title" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                     <option value="">-- Select Title --</option>
-                    <option value="Overseerer" {% if form.instance.church_title == 'OVERSEERER' %}selected{% endif %}>OVERSEERER</option>
-                    <option value="Reverend" {% if form.instance.church_title == 'REVEREND' %}selected{% endif %}>REVEREND</option>
+                    <option value="OVERSEERER" {% if form.instance.church_title == 'OVERSEERER' %}selected{% endif %}>OVERSEERER</option>
+                    <option value="REVEREND" {% if form.instance.church_title == 'REVEREND' %}selected{% endif %}>REVEREND</option>
                     <option value="EVANGELIST" {% if form.instance.church_title == 'EVANGELIST' %}selected{% endif %}>EVANGELIST</option>
                     <option value="MAKHOKHELI" {% if form.instance.church_title == 'MAKHOKHELI' %}selected{% endif %}>MAKHOKHELI</option>
                     <option value="CONGREGANT" {% if form.instance.church_title == 'CONGREGANT' %}selected{% endif %}>CONGREGANT</option>

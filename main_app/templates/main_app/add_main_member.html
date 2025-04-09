@@ -38,7 +38,7 @@
                 <!-- Main Member Section -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {% for field in form %}
-                        {% if field.name != 'branch_member_number' %}
+                        {% if field.name != 'branch_member_number' and field.name != 'church_title' %}
                         <div class="space-y-2">
                             <label class="block text-sm font-medium text-gray-700">
                                 {{ field.label }}
@@ -67,11 +67,11 @@
                             </label>
                             <select name="church_title" id="id_church_title" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
                                 <option value="">-- Select Title --</option>
-                                <option value="Overseerer">OVERSEERER</option>
+                                <option value="OVERSEERER">OVERSEERER</option>
                                 <option value="Reverend">REVEREND</option>
-                                <option value="Evangelist">EVANGELIST</option>
-                                <option value="Congregation">CONGREGANT</option>
-                                <option value="Mamkhokeli">MAMKHOKELI</option>
+                                <option value="EVANGELIST">EVANGELIST</option>
+                                <option value="CONGREGANT">CONGREGANT</option>
+                                <option value="MAMKHOKELI">MAMKHOKELI</option>
                             </select>
                         </div>
                     </div>
