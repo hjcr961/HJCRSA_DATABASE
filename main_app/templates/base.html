@@ -7,115 +7,215 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0/dist/chartjs-plugin-datalabels.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #c5c5c5;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+        
+        /* Page transition animations */
+        .page-enter {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        .page-enter-active {
+            opacity: 1;
+            transform: translateY(0);
+            transition: opacity 300ms, transform 300ms;
+        }
+        
+        #content-wrapper {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
 </head>
-<body class="bg-gray-100">
+<body class="bg-gray-50">
     {% load static %}
     <div id="loading-indicator" class="hidden fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-white p-6 rounded-lg shadow-xl flex items-center space-x-4">
-            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <span class="text-lg font-semibold text-gray-700">Loading...</span>
+        <div class="bg-white p-6 rounded-lg shadow-xl flex flex-col items-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
+            <span class="mt-4 text-lg font-semibold text-gray-700">Loading...</span>
         </div>
     </div>    
+    
     <!-- Sidebar -->
-    <aside class="fixed top-0 left-0 w-64 h-full bg-white shadow-xl border-r border-gray-200 transition-all duration-300 ease-in-out" aria-label="Sidebar">
-        <div class="h-full px-4 py-6 overflow-y-auto">
-            <ul class="space-y-2">
+    <aside class="fixed top-0 left-0 w-64 h-full bg-white shadow-xl border-r border-gray-200 transition-all duration-300 ease-in-out z-30" aria-label="Sidebar">
+        <div class="h-full px-3 py-4 overflow-y-auto">
+            <ul class="space-y-1">
                 <li>
-                    <a href="{% url 'home' %}" class="flex items-center p-3 text-gray-700 rounded-lg transition-all duration-200 ease-in-out hover:bg-blue-50 hover:text-blue-600 group">
-                        <svg class="w-6 h-6 text-gray-500 group-hover:text-blue-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <a href="{% url 'home' %}" class="flex items-center p-3 text-gray-700 rounded-lg transition-all duration-200 ease-in-out hover:bg-primary-50 hover:text-primary-600 group {% if request.path == '/' %}bg-primary-50 text-primary-600{% endif %}">
+                        <svg class="w-5 h-5 text-gray-500 group-hover:text-primary-600 transition-colors {% if request.path == '/' %}text-primary-600{% endif %}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
                         </svg>
-                        <span class="ml-4 font-medium text-sm">Home</span>
+                        <span class="ml-3 font-medium text-sm">Home</span>
                     </a>
                 </li>
                 <li>
-                    <a href="{% url 'member_list' %}" class="flex items-center p-3 text-gray-700 rounded-lg transition-all duration-200 ease-in-out hover:bg-blue-50 hover:text-blue-600 group">
-                        <svg class="w-6 h-6 text-gray-500 group-hover:text-blue-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <a href="{% url 'member_list' %}" class="flex items-center p-3 text-gray-700 rounded-lg transition-all duration-200 ease-in-out hover:bg-primary-50 hover:text-primary-600 group {% if '/member/' in request.path %}bg-primary-50 text-primary-600{% endif %}">
+                        <svg class="w-5 h-5 text-gray-500 group-hover:text-primary-600 transition-colors {% if '/member/' in request.path %}text-primary-600{% endif %}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
                         </svg>
-                        <span class="ml-4 font-medium text-sm">Members</span>
+                        <span class="ml-3 font-medium text-sm">Members</span>
                     </a>
                 </li>
                 <li>
-                    <a href="{% url 'dependent_list' %}" class="flex items-center p-3 text-gray-700 rounded-lg transition-all duration-200 ease-in-out hover:bg-blue-50 hover:text-blue-600 group">
-                        <svg class="w-6 h-6 text-gray-500 group-hover:text-blue-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <a href="{% url 'dependent_list' %}" class="flex items-center p-3 text-gray-700 rounded-lg transition-all duration-200 ease-in-out hover:bg-primary-50 hover:text-primary-600 group {% if '/dependent/' in request.path %}bg-primary-50 text-primary-600{% endif %}">
+                        <svg class="w-5 h-5 text-gray-500 group-hover:text-primary-600 transition-colors {% if '/dependent/' in request.path %}text-primary-600{% endif %}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
                         </svg>
-                        <span class="ml-4 font-medium text-sm">Dependents</span>
+                        <span class="ml-3 font-medium text-sm">Dependents</span>
                     </a>
                 </li>
-                {% if perms.main_app.view_treasury %}
+                                {% if perms.main_app.view_treasury %}
                 <li>
-                    <a href="{% url 'treasury_list' %}" class="flex items-center p-3 text-gray-700 rounded-lg transition-all duration-200 ease-in-out hover:bg-blue-50 hover:text-blue-600 group">
-                        <svg class="w-6 h-6 text-gray-500 group-hover:text-blue-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <a href="{% url 'treasury_list' %}" class="flex items-center p-3 text-gray-700 rounded-lg transition-all duration-200 ease-in-out hover:bg-primary-50 hover:text-primary-600 group {% if '/treasury/' in request.path and not '/treasury_dep/' in request.path %}bg-primary-50 text-primary-600{% endif %}">
+                        <svg class="w-5 h-5 text-gray-500 group-hover:text-primary-600 transition-colors {% if '/treasury/' in request.path and not '/treasury_dep/' in request.path %}text-primary-600{% endif %}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
-                        <span class="ml-4 font-medium text-sm">Treasury</span>
+                        <span class="ml-3 font-medium text-sm">Treasury</span>
                     </a>
                 </li>
                 <li>
-                    <a href="{% url 'treasury_dep_list' %}" class="flex items-center p-3 text-gray-700 rounded-lg transition-all duration-200 ease-in-out hover:bg-blue-50 hover:text-blue-600 group">
-                        <svg class="w-6 h-6 text-gray-500 group-hover:text-blue-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <a href="{% url 'treasury_dep_list' %}" class="flex items-center p-3 text-gray-700 rounded-lg transition-all duration-200 ease-in-out hover:bg-primary-50 hover:text-primary-600 group {% if '/treasury_dep/' in request.path %}bg-primary-50 text-primary-600{% endif %}">
+                        <svg class="w-5 h-5 text-gray-500 group-hover:text-primary-600 transition-colors {% if '/treasury_dep/' in request.path %}text-primary-600{% endif %}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
                         </svg>
-                        <span class="ml-4 font-medium text-sm">Treasury Dependent</span>
+                        <span class="ml-3 font-medium text-sm">Treasury Dependent</span>
                     </a>
                 </li>
                 <li>
-                    <a href="{% url 'upload_picture' %}" class="flex items-center p-3 text-gray-700 rounded-lg transition-all duration-200 ease-in-out hover:bg-blue-50 hover:text-blue-600 group">
-                        <svg class="w-6 h-6 text-gray-500 group-hover:text-blue-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <a href="{% url 'upload_picture' %}" class="flex items-center p-3 text-gray-700 rounded-lg transition-all duration-200 ease-in-out hover:bg-primary-50 hover:text-primary-600 group {% if '/upload_picture/' in request.path %}bg-primary-50 text-primary-600{% endif %}">
+                        <svg class="w-5 h-5 text-gray-500 group-hover:text-primary-600 transition-colors {% if '/upload_picture/' in request.path %}text-primary-600{% endif %}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                         </svg>
-                        <span class="ml-4 font-medium text-sm">Load Picture</span>
+                        <span class="ml-3 font-medium text-sm">Load Picture</span>
                     </a>
                 </li>                
                 {% endif %}
             </ul>
         </div>
     </aside>
+    
     <!-- Top Navigation Bar -->
-    <nav class="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+    <nav class="fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200 shadow-sm">
         <div class="flex items-center justify-between h-16 px-4 max-w-full mx-auto">
             <div class="flex items-center">
-                <button id="toggleSidebar" class="mr-4 text-gray-600 hover:text-gray-900 lg:hidden">
+                <button id="toggleSidebar" class="p-2 mr-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg lg:hidden">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
                     </svg>
                 </button>
                 <img src="{% static 'main_app/images/logo.png' %}" class="h-10 w-auto mr-4" alt="HJCRSA Logo" />
-                <span class="text-base font-medium text-gray-700">Holy Jerusalem Church Of Repentance Of South Africa</span>
+                <span class="text-base font-medium text-gray-700 hidden md:block">Holy Jerusalem Church Of Repentance Of South Africa</span>
+                <span class="text-base font-medium text-gray-700 md:hidden">HJCRSA</span>
             </div>
 
             <!-- User Menu -->
             <div class="relative">
-                <button type="button" class="flex items-center space-x-3 p-2 rounded-lg hover:bg-blue-50" id="user-menu-button">
-                    <img class="w-8 h-8 rounded-full" src="https://flowbite.com/docs/images/people/profile-picture-5.jpg" alt="user photo">
+                <button type="button" class="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-100" id="user-menu-button">
+                    <div class="w-8 h-8 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center">
+                        <span class="font-semibold">{{ user.username|slice:":1"|upper }}</span>
+                    </div>
                     <span class="hidden md:block text-sm text-gray-600">{{ user.username }}</span>
+                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
                 </button>
-                <!-- Dropdown menu -->
-                <div id="user-dropdown" class="z-10 hidden absolute right-0 mt-2 w-48 bg-white divide-y divide-gray-100 rounded-lg shadow-lg">
+                <!-- Improved dropdown menu -->
+                                <div id="user-dropdown" class="z-50 hidden absolute right-0 mt-2 w-56 bg-white divide-y divide-gray-100 rounded-lg shadow-lg ring-1 ring-black ring-opacity-5">
                     <div class="px-4 py-3 text-sm text-gray-900">
-                        <div>{{ user.first_name }} {{ user.last_name }}</div>
-                        <div class="font-medium truncate">{{ user.email }}</div>
+                        <div class="font-semibold">{{ user.first_name }} {{ user.last_name }}</div>
+                        <div class="truncate text-gray-500">{{ user.email }}</div>
                     </div>
                     <ul class="py-2 text-sm text-gray-700">
                         <li>
-                            <a href="#" class="block px-4 py-2 hover:bg-gray-100">Profile</a>
+                            <a href="#" class="flex items-center px-4 py-2 hover:bg-gray-100">
+                                <svg class="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                </svg>
+                                Profile
+                            </a>
                         </li>
                         <li>
-                            <a href="#" class="block px-4 py-2 hover:bg-gray-100">Settings</a>
+                            <a href="#" class="flex items-center px-4 py-2 hover:bg-gray-100">
+                                <svg class="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                </svg>
+                                Settings
+                            </a>
                         </li>
                     </ul>
                     <div class="py-1">
-                        <a href="{% url 'logout' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Sign out</a>
+                        <a href="{% url 'logout' %}" class="flex items-center px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
+                            <svg class="w-4 h-4 mr-2 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                            </svg>
+                            Sign out
+                        </a>
                     </div>
                 </div>
             </div>
         </div>
     </nav>
+    
     <!-- Main Content Area -->
-    <main class="ml-64 mt-16 p-4">
-        {% block content %}{% endblock %}
+    <main class="ml-64 pt-16 p-4 transition-all duration-300" id="main-content">
+        <div class="mb-4">
+            <nav class="flex" aria-label="Breadcrumb">
+                <ol class="inline-flex items-center space-x-1 md:space-x-3">
+                    <li class="inline-flex items-center">
+                        <a href="{% url 'home' %}" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-primary-600">
+                        
+                        </a>
+                    </li>
+                    {% block breadcrumb %}{% endblock %}
+                </ol>
+            </nav>
+        </div>
+        
+        
+        <div id="content-wrapper">
+            {% block content %}{% endblock %}
+        </div>
     </main>
 
     <script>
@@ -137,9 +237,80 @@
         // Sidebar Toggle for Mobile
         const toggleSidebar = document.getElementById('toggleSidebar');
         const sidebar = document.querySelector('aside');
+        const mainContent = document.getElementById('main-content');
 
         toggleSidebar.addEventListener('click', () => {
             sidebar.classList.toggle('-translate-x-full');
+            mainContent.classList.toggle('ml-0');
+            mainContent.classList.toggle('ml-64');
+        });
+        
+        // Add media query for automatic sidebar collapse on small screens
+        function handleResize() {
+            if (window.innerWidth < 768) {
+                sidebar.classList.add('-translate-x-full');
+                mainContent.classList.remove('ml-64');
+                mainContent.classList.add('ml-0');
+            } else {
+                sidebar.classList.remove('-translate-x-full');
+                mainContent.classList.add('ml-64');
+                mainContent.classList.remove('ml-0');
+            }
+        }
+        
+        window.addEventListener('resize', handleResize);
+        // Initial check
+        handleResize();
+        
+        // Function to show loading indicator
+        function showLoading() {
+            document.getElementById('loading-indicator').classList.remove('hidden');
+        }
+        
+        // Function to hide loading indicator
+        function hideLoading() {
+            document.getElementById('loading-indicator').classList.add('hidden');
+        }
+        
+        // Add loading indicator to form submissions
+        document.addEventListener('DOMContentLoaded', function() {
+            const forms = document.querySelectorAll('form');
+            forms.forEach(form => {
+                form.addEventListener('submit', function() {
+                    showLoading();
+                });
+            });
+            
+            // Add loading to links that aren't in the dropdown menu or sidebar
+            // Fix for the logout issue - don't add loading to specific links
+            const links = document.querySelectorAll('a:not(#user-dropdown a)');
+            links.forEach(link => {
+                // Skip links with # or javascript: href
+                if (link.getAttribute('href') && 
+                    !link.getAttribute('href').startsWith('#') && 
+                    !link.getAttribute('href').startsWith('javascript:')) {
+                    
+                    // Check if this is a home link or other navigation link
+                    const href = link.getAttribute('href');
+                    
+                    // Don't add loading indicator to navigation links to prevent logout issues
+                    if (!href.includes('home') && 
+                        !href.includes('member_list') && 
+                        !href.includes('dependent_list') && 
+                        !href.includes('treasury_list') && 
+                        !href.includes('treasury_dep_list') && 
+                        !href.includes('upload_picture') && 
+                        !href.includes('logout')) {
+                        
+                        link.addEventListener('click', function(e) {
+                            // Don't show loading for links with target="_blank" or download attribute
+                            if (!link.getAttribute('target') && !link.hasAttribute('download')) {
+                                showLoading();
+                            }
+                        });
+                    }
+                }
+            });
         });
     </script>
 </body>
