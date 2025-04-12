@@ -125,7 +125,7 @@ class Treasury(models.Model):
         ('Maintenance', 'Maintenance'),
         ('Blessing', 'Blessing'),
         ('Registration', 'Registration'),
-    
+        ('Baptismal', 'Baptismal'),
     ]
 
     idtreasury = models.AutoField(db_column='idTreasury', primary_key=True)

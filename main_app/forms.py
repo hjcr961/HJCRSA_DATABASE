@@ -56,6 +56,7 @@ class TreasuryForm(forms.ModelForm):
         ('Maintenance', 'Maintenance'),
         ('Blessing', 'Blessing'),
         ('Registration', 'Registration'),
+        ('Baptismal', 'Baptismal'),
     ]
     
     fund = forms.ChoiceField(choices=FUND_CHOICES)
