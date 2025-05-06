@@ -34,10 +34,8 @@ urlpatterns = [
     path('signup/', views.signup_view, name='signup'),
     path('api/gender-distribution/', views.get_gender_distribution, name='gender_distribution'),
     path('upload-picture/', views.upload_picture, name='upload_picture'),
-
-
-
-
-
-    
+    path('', views.home_view, name='home'), 
+    path('barcodes/', views.barcode_list, name='barcode_list'),
+    path('barcodes/<int:barcode_id>/', views.barcode_detail, name='barcode_detail'),
+   
 ]

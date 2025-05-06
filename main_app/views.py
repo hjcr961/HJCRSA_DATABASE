@@ -41,6 +41,11 @@ from PIL import Image
 from io import BytesIO
 from django.db.models import Sum
 from django.db import transaction
+from django.db import connection
+from django.utils import timezone
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+from .models import Elders, MainMembers
 
 
 
@@ -609,12 +614,27 @@ def login_view(request):
                 return render(request, 'registration/login.html')
             
             login(request, user)
+            
+            # Log the login action
+            from .utils import log_user_action
+            try:
+                log_user_action(
+                    user_email=user.email,
+                    action='login',
+                    details=f"User {user.username} logged in"
+                )
+                print("Log entry created successfully.")
+            except Exception as e:
+                print(f"Failed to log action: {e}")
+            
             return redirect('member_list')
         else:
             messages.add_message(request, messages.ERROR, 'Invalid username or password')
             return render(request, 'registration/login.html')
     
     return render(request, 'registration/login.html')
+
+
 
 
 
@@ -713,4 +733,82 @@ def get_gender_distribution(request):
     return JsonResponse(data)
 
 
+
+def log_user_action(user_email, action, details=None):
+    """
+    Log user actions to the user_activity_log table.
+    
+    Args:
+        user_email (str): Email of the user performing the action
+        action (str): Description of the action (e.g., 'login', 'add_member', 'edit_treasury')
+        details (str, optional): Additional details about the action
+    """
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            INSERT INTO user_activity_log (user_email, action, details, timestamp)
+            VALUES (%s, %s, %s, %s)
+        """, [user_email, action, details, timezone.now()])
+
+
+@login_required
+def view_action_logs(request):
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT id, timestamp, user_email, action, details
+            FROM user_actions
+            ORDER BY timestamp DESC
+            LIMIT 1000
+        """)
+        
+        columns = [col[0] for col in cursor.description]
+        logs = [dict(zip(columns, row)) for row in cursor.fetchall()]
+    
+    return render(request, 'main_app/action_logs.html', {'logs': logs})
+
+
+@login_required
+def view_action_logs(request):
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT id, timestamp, user_email, action, details
+            FROM user_activity_log
+            ORDER BY timestamp DESC
+            LIMIT 1000
+        """)
+        
+        columns = [col[0] for col in cursor.description]
+        logs = [dict(zip(columns, row)) for row in cursor.fetchall()]
+    
+    return render(request, 'main_app/action_logs.html', {'logs': logs})
+
+
+
+
+
+@login_required
+def barcode_list(request):
+    """
+    Display a list of all generated barcodes with member details
+    """
+    # Get all barcode entries with their related member details
+    # The Elders model has a OneToOneField to MainMembers, so we can access
+    # the MainMembers fields directly through the relationship
+    barcodes = Elders.objects.select_related('branch_member_number').all()
+    
+    return render(request, 'main_app/barcode_list.html', {
+        'barcodes': barcodes,
+        'title': 'Barcode List',
+    })
+
+@login_required
+def barcode_detail(request, barcode_id):
+    """
+    Display details for a specific barcode
+    """
+    barcode = Elders.objects.select_related('branch_member_number').get(id=barcode_id)
+    
+    return render(request, 'main_app/barcode_detail.html', {
+        'barcode': barcode,
+        'title': f'Barcode: {barcode.barcode_value}',
+    })
 
