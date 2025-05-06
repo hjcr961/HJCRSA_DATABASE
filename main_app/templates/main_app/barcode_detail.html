@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+{% load barcode_tags %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Barcode Details</h1>
+        <a href="{% url 'barcode_list' %}" class="bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 px-4 rounded-lg inline-flex items-center transition-colors">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+            </svg>
+            Back to List
+        </a>
+    </div>
+    
+    <div class="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200">
+        <!-- Barcode Header -->
+        <div class="bg-primary-600 text-white px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-semibold">{{ barcode.branch_member_number.name }} {{ barcode.branch_member_number.surname }}</h2>
+            <p class="text-sm text-primary-100">{{ barcode.title }}</p>
+        </div>
+        
+        <!-- Barcode Image Section -->
+        <div class="flex flex-col items-center justify-center py-8 px-6 bg-gray-50 border-b border-gray-200">
+            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-4 w-full max-w-md">
+                <img src="data:image/png;base64,{{ barcode.barcode_image|b64encode }}" 
+                     alt="Barcode" class="mx-auto h-24 w-auto">
+                <p class="text-center mt-4 font-mono text-sm">{{ barcode.barcode_value }}</p>
+            </div>
+            <div class="flex space-x-4">
+                <button onclick="window.print()" class="bg-primary-600 hover:bg-primary-700 text-white py-2 px-4 rounded-lg inline-flex items-center transition-colors">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+                    </svg>
+                    Print Barcode
+                </button>
+                <button id="downloadBtn" class="bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded-lg inline-flex items-center transition-colors">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                    </svg>
+                    Download
+                </button>
+            </div>
+        </div>
+        
+        <!-- Member Information -->
+        <div class="p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Member Details -->
+                <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                    <div class="bg-gray-50 px-4 py-3 border-b border-gray-200">
+                        <h3 class="text-lg font-medium text-gray-800">Member Information</h3>
+                    </div>
+                    <div class="divide-y divide-gray-200">
+                        <div class="flex py-3 px-4">
+                            <span class="w-1/3 text-gray-500 text-sm">Title:</span>
+                            <span class="w-2/3 text-gray-900 font-medium">{{ barcode.title }}</span>
+                        </div>
+                        <div class="flex py-3 px-4">
+                            <span class="w-1/3 text-gray-500 text-sm">Name:</span>
+                            <span class="w-2/3 text-gray-900 font-medium">{{ barcode.branch_member_number.name }}</span>
+                        </div>
+                        <div class="flex py-3 px-4">
+                            <span class="w-1/3 text-gray-500 text-sm">Surname:</span>
+                            <span class="w-2/3 text-gray-900 font-medium">{{ barcode.branch_member_number.surname }}</span>
+                        </div>
+                        <div class="flex py-3 px-4">
+                            <span class="w-1/3 text-gray-500 text-sm">Branch Member #:</span>
+                            <span class="w-2/3 text-gray-900 font-medium">{{ barcode.branch_member_number.branch_member_number }}</span>
+                        </div>
+                        <div class="flex py-3 px-4">
+                            <span class="w-1/3 text-gray-500 text-sm">Branch:</span>
+                            <span class="w-2/3 text-gray-900 font-medium">{{ barcode.branch_member_number.branch }}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Barcode Details -->
+                <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                    <div class="bg-gray-50 px-4 py-3 border-b border-gray-200">
+                        <h3 class="text-lg font-medium text-gray-800">Barcode Information</h3>
+                    </div>
+                    <div class="divide-y divide-gray-200">
+                        <div class="flex py-3 px-4">
+                            <span class="w-1/3 text-gray-500 text-sm">Status:</span>
+                            <span class="w-2/3">
+                                <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                    {% if barcode.status == 'active' %}
+                                        bg-green-100 text-green-800
+                                    {% else %}
+                                        bg-red-100 text-red-800
+                                    {% endif %}">
+                                    {{ barcode.status|title }}
+                                </span>
+                            </span>
+                        </div>
+                        <div class="flex py-3 px-4">
+                            <span class="w-1/3 text-gray-500 text-sm">Issue Date:</span>
+                            <span class="w-2/3 text-gray-900 font-medium">{{ barcode.issue_date }}</span>
+                        </div>
+                        <div class="flex py-3 px-4">
+                            <span class="w-1/3 text-gray-500 text-sm">Expiry Date:</span>
+                            <span class="w-2/3 text-gray-900 font-medium">{{ barcode.expiry_date }}</span>
+                        </div>
+                        <div class="flex py-3 px-4">
+                            <span class="w-1/3 text-gray-500 text-sm">Barcode Value:</span>
+                            <span class="w-2/3 text-gray-900 font-mono text-sm">{{ barcode.barcode_value }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Script for downloading the barcode image
+    document.getElementById('downloadBtn').addEventListener('click', function() {
+        const imgSrc = "data:image/png;base64,{{ barcode.barcode_image|b64encode }}";
+        const downloadLink = document.createElement('a');
+        downloadLink.href = imgSrc;
+        downloadLink.download = "barcode-{{ barcode.barcode_value }}.png";
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+    });
+</script>
+{% endblock %}
