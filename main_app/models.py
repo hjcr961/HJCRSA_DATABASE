@@ -149,4 +149,45 @@ class Treasury(models.Model):
     
 
 
+class Elders(models.Model):
+    STATUS_CHOICES = [
+        ('active', 'Active'),
+        ('inactive', 'Inactive'),
+        ('expired', 'Expired'),
+    ]
+    
+    id = models.AutoField(primary_key=True)
+    branch_member_number = models.OneToOneField(
+        MainMembers, 
+        to_field='branch_member_number',
+        db_column='branch_member_number',
+        on_delete=models.CASCADE,
+        related_name='elder_barcode'
+    )
+    title = models.CharField(max_length=45)
+    barcode_value = models.CharField(max_length=50, unique=True)
+    barcode_image = models.BinaryField(null=True, blank=True)
+    issue_date = models.DateField()
+    expiry_date = models.DateField(null=True, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        managed = False  # Since we created the table directly with SQL
+        db_table = 'Elders'
+        
+    def __str__(self):
+        return f"{self.title}: {self.branch_member_number}"
+    
+    @property
+    def is_valid(self):
+        """Check if the barcode is currently valid"""
+        if self.status != 'active':
+            return False
+        if self.expiry_date and self.expiry_date < timezone.now().date():
+            return False
+        return True
+
+
 
