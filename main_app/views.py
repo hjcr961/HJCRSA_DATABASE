@@ -812,3 +812,46 @@ def barcode_detail(request, barcode_id):
         'title': f'Barcode: {barcode.barcode_value}',
     })
 
+
+
+@login_required
+def barcode_scanner(request):
+    """
+    Provide an interface for scanning barcodes using a camera or physical scanner
+    """
+    return render(request, 'main_app/barcode_scanner.html', {
+        'title': 'Barcode Scanner',
+    })
+
+@login_required
+def barcode_lookup(request):
+    """
+    API endpoint to look up a barcode value and return member details
+    """
+    barcode_value = request.GET.get('barcode', '')
+    
+    if not barcode_value:
+        return JsonResponse({'error': 'No barcode provided'}, status=400)
+    
+    try:
+        # Look up the barcode in the database
+        barcode = Elders.objects.select_related('branch_member_number').get(barcode_value=barcode_value)
+        
+        # Return member details as JSON
+        return JsonResponse({
+            'success': True,
+            'member': {
+                'id': barcode.id,
+                'title': barcode.title,
+                'name': barcode.branch_member_number.name,
+                'surname': barcode.branch_member_number.surname,
+                'branch_member_number': barcode.branch_member_number.branch_member_number,
+                'branch': barcode.branch_member_number.branch,
+                'status': barcode.status,
+                'issue_date': barcode.issue_date.strftime('%Y-%m-%d'),
+                'expiry_date': barcode.expiry_date.strftime('%Y-%m-%d'),
+                'detail_url': reverse('barcode_detail', args=[barcode.id]),
+            }
+        })
+    except Elders.DoesNotExist:
+        return JsonResponse({'error': 'Barcode not found'}, status=404)

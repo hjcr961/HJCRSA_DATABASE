@@ -37,5 +37,7 @@ urlpatterns = [
     path('', views.home_view, name='home'), 
     path('barcodes/', views.barcode_list, name='barcode_list'),
     path('barcodes/<int:barcode_id>/', views.barcode_detail, name='barcode_detail'),
+    path('barcodes/scanner/', views.barcode_scanner, name='barcode_scanner'),
+    path('barcodes/lookup/', views.barcode_lookup, name='barcode_lookup'),
    
 ]
