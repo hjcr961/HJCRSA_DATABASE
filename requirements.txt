@@ -11,3 +11,4 @@ python-barcode==0.15.1
 python-dotenv==1.0.1
 sqlparse==0.5.1
 whitenoise==6.6.0
+openpyxl>=3.0.0
