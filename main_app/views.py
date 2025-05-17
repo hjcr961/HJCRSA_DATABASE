@@ -49,7 +49,6 @@ from .models import Elders, MainMembers
 from django.http import JsonResponse
 from base64 import b64encode
 from django.db import connection
-import datetime
 from django.shortcuts import render
 from django.db import connection
 from django.http import HttpResponse
