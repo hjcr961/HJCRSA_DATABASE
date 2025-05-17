@@ -19,7 +19,7 @@ urlpatterns = [
     path('treasury/', views.treasury_list, name='treasury_list'),
     path('treasury-dep/', views.treasury_dep_list, name='treasury_dep_list'),
     path('activity-log/', ActivityLogView.as_view(), name='activity_log'),
-    path('member/<int:pk>/edit/', views.MemberUpdateView.as_view(), name='edit_member'),
+    path('member/<str:pk>/edit/', views.MemberUpdateView.as_view(), name='edit_member'),
     path('api/member/<int:card_number>/payments/', views.member_payments, name='member_payments'),
     path('api/member/<int:card_number>/dependents/', views.member_dependents, name='member_dependents'),
     path('', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
@@ -39,5 +39,7 @@ urlpatterns = [
     path('barcodes/<int:barcode_id>/', views.barcode_detail, name='barcode_detail'),
     path('barcodes/scanner/', views.barcode_scanner, name='barcode_scanner'),
     path('barcodes/lookup/', views.barcode_lookup, name='barcode_lookup'),
-   
+    path('api/member/<str:card_number>/details/', views.member_details_api, name='member_details_api'),
+    path('reports/fund/', views.fund_report, name='fund_report'),
+
 ]

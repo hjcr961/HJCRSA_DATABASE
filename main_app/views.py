@@ -46,10 +46,77 @@ from django.utils import timezone
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from .models import Elders, MainMembers
+from django.http import JsonResponse
+from base64 import b64encode
+from django.db import connection
+import datetime
+from django.shortcuts import render
+from django.db import connection
+from django.http import HttpResponse
+import openpyxl
 
+def fund_report(request):
+    # Get fund types for dropdown
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT DISTINCT fund FROM Treasury ORDER BY fund")
+        fund_types = [row[0] for row in cursor.fetchall()]
 
+    # Get filters
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    selected_fund_type = request.GET.get('fund_type', '')
 
+    params = []
+    where_clauses = []
 
+    if start_date:
+        where_clauses.append("payment_date >= %s")
+        params.append(start_date)
+    if end_date:
+        where_clauses.append("payment_date <= %s")
+        params.append(end_date)
+    if selected_fund_type:
+        where_clauses.append("fund = %s")
+        params.append(selected_fund_type)
+
+    where = ""
+    if where_clauses:
+        where = "WHERE " + " AND ".join(where_clauses)
+
+    with connection.cursor() as cursor:
+        cursor.execute(f"""
+            SELECT fund, SUM(amount) as total_amount, COUNT(*) as num_payments
+            FROM Treasury
+            {where}
+            GROUP BY fund
+            ORDER BY fund
+        """, params)
+        fund_data = [
+            {"fund": row[0], "total_amount": row[1], "num_payments": row[2]}
+            for row in cursor.fetchall()
+        ]
+
+    # Excel export
+    if request.GET.get('export') == 'excel':
+        import openpyxl
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Fund Report"
+        ws.append(["Fund Type", "Total Amount", "Number of Payments"])
+        for row in fund_data:
+            ws.append([row["fund"], float(row["total_amount"] or 0), row["num_payments"]])
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = 'attachment; filename=fund_report.xlsx'
+        wb.save(response)
+        return response
+
+    return render(request, "main_app/fund_report.html", {
+        "fund_data": fund_data,
+        "start_date": start_date,
+        "end_date": end_date,
+        "fund_types": fund_types,
+        "selected_fund_type": selected_fund_type,
+    })
 
 @require_http_methods(["GET", "POST"])
 def upload_picture(request):
@@ -627,7 +694,7 @@ def login_view(request):
             except Exception as e:
                 print(f"Failed to log action: {e}")
             
-            return redirect('member_list')
+            return redirect('main_app/home.html')
         else:
             messages.add_message(request, messages.ERROR, 'Invalid username or password')
             return render(request, 'registration/login.html')
@@ -855,3 +922,45 @@ def barcode_lookup(request):
         })
     except Elders.DoesNotExist:
         return JsonResponse({'error': 'Barcode not found'}, status=404)
+
+def member_details_api(request, card_number):
+    try:
+        # Use raw SQL to match the rest of your codebase
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT mm.card_number, mm.name, mm.surname, mm.branch, mm.gender, 
+                       mm.phone_number, mm.address, mm.branch_member_number, mm.church_title
+                FROM Main_Members mm
+                WHERE mm.card_number = %s
+            """, [card_number])
+
+            columns = [col[0] for col in cursor.description]
+            result = cursor.fetchone()
+
+            if not result:
+                return JsonResponse({'error': 'Member not found'}, status=404)
+
+            member_data = dict(zip(columns, result))
+
+            # Get picture data
+            cursor.execute("""
+                SELECT picture_data 
+                FROM Member_Pictures
+                WHERE Branch_Member_Number = %s
+            """, [member_data.get('branch_member_number')])
+
+            picture_row = cursor.fetchone()
+
+            if picture_row and picture_row[0]:
+                member_data['picture_url'] = f"data:image/jpeg;base64,{b64encode(picture_row[0]).decode()}"
+            else:
+                member_data['picture_url'] = '/static/default-profile.jpg'
+
+            return JsonResponse(member_data)
+
+    except Exception as e:
+        print(f"Error in member_details_api: {e}")
+        return JsonResponse({'error': str(e)}, status=500)
+    
+    
+    
