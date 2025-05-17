@@ -53,141 +53,131 @@
 </div>
 <!-- Main Container -->
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <!-- Header Section -->
+    <!-- Enhanced Header Section -->
     <div class="bg-white rounded-xl card-shadow mb-6">
         <div class="p-6">
-            <div class="flex flex-col lg:flex-row justify-between items-center space-y-4 lg:space-y-0">
-                <div class="flex items-center space-x-4">
-                    <h1 class="text-2xl font-bold text-[#1a237e]">Members Directory</h1>
-                    <span class="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm font-medium">
-                         Members: {{ members|length }}
-                    </span>
-                </div>
-                                <!-- Dependents Total Count -->
-                <div class="flex items-center space-x-4 mt-4 lg:mt-0">
-                    <span class="px-3 py-1 bg-green-50 text-green-700 rounded-full text-sm font-medium">
-                         Dependents: {{ dependents|length }}
-                    </span>
-                </div>            
-                  <div class="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4 w-full lg:w-auto">
+            <div class="flex flex-col space-y-6">
+                <!-- Title & Stats Row -->
+                <div class="flex flex-wrap items-center justify-between gap-4">
+                    <div class="flex items-center space-x-4">
+                        <h1 class="text-2xl font-bold text-[#1a237e]">Members Directory</h1>
+                        <div class="flex space-x-2">
+                            <span class="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm font-medium">
+                                Members: {{ members|length }}
+                            </span>
+                            <span class="px-3 py-1 bg-green-50 text-green-700 rounded-full text-sm font-medium">
+                                Dependents: {{ dependents|length }}
+                            </span>
+                        </div>
+                    </div>
+
                     <!-- Enhanced Search Bar -->
-                    <div class="relative w-full sm:w-96">
-                        <input type="text" id="table-search" 
-                            class="w-full pl-12 pr-4 py-3 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
-                            placeholder="Search by name, card number, or branch...">
-                        <div class="absolute left-4 top-1/2 transform -translate-y-1/2">
-                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="relative w-full md:w-80">
+                        <input type="text" id="table-search"
+                            class="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+                            placeholder="Search members...">
+                        <div class="absolute left-3 top-1/2 transform -translate-y-1/2">
+                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                             </svg>
                         </div>
                     </div>
+                </div>
+
+                <!-- Action Buttons & Tabs -->
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center">
+                    <!-- Tabs -->
+                    <div class="flex space-x-1 border-b border-gray-200 w-full sm:w-auto">
+                        <button class="px-4 py-2 text-sm font-medium text-[#1a237e] border-b-2 border-[#1a237e]">All Members</button>
+                        <button class="px-4 py-2 text-sm font-medium text-gray-500 hover:text-[#1a237e]">Active</button>
+                        <button class="px-4 py-2 text-sm font-medium text-gray-500 hover:text-[#1a237e]">Inactive</button>
+                    </div>
 
                     <!-- Action Buttons -->
-                    <div class="flex flex-col sm:flex-row gap-2">
-                        <a href="{% url 'add_main_member' %}" 
-                            class="inline-flex items-center px-4 py-2 text-xs bg-[#1a237e] text-white rounded-lg hover:bg-[#283593] transition-all duration-200 shadow-sm hover:shadow-md w-full sm:w-auto justify-center">
+                    <div class="flex flex-wrap gap-2 mt-4 sm:mt-0">
+                        <a href="{% url 'add_main_member' %}"
+                            class="inline-flex items-center px-3 py-2 text-xs bg-[#1a237e] text-white rounded-lg hover:bg-[#283593] transition-all shadow-sm hover:shadow-md">
                             <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                             </svg>
-                            Add New Member
+                            Add Member
                         </a>
                         <a href="{% url 'add_treasury' %}" 
-                            class="inline-flex items-center px-4 py-2 text-xs bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-200 shadow-sm hover:shadow-md w-full sm:w-auto justify-center">
+                            class="inline-flex items-center px-3 py-2 text-xs bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all shadow-sm hover:shadow-md">
                             <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" strokpaye-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
-                            Add Card Payment
+                            Add Payment
                         </a>
                         <a href="{% url 'add_dependent' %}" 
-                            class="inline-flex items-center px-4 py-2 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 shadow-sm hover:shadow-md w-full sm:w-auto justify-center">
+                            class="inline-flex items-center px-3 py-2 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all shadow-sm hover:shadow-md">
                             <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
                             </svg>
                             Add Dependent
                         </a>
                     </div>
-
                 </div>
             </div>
         </div>
     </div>
     <!-- Table Section -->
 <!-- Table Section -->
-<div class="bg-white rounded-xl card-shadow overflow-hidden">
-    <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th scope="col" class="px-6 py-4 text-left text-[10px] font-semibold text-[#1a237e] uppercase tracking-wider">Card Number</th>
-                    <th scope="col" class="px-6 py-4 text-left text-[10px] font-semibold text-[#1a237e] uppercase tracking-wider">Church Title</th>
-                    <th scope="col" class="px-6 py-4 text-left text-[10px] font-semibold text-[#1a237e] uppercase tracking-wider">Name Surname</th>
-                    <th scope="col" class="px-6 py-4 text-left text-[10px] font-semibold text-[#1a237e] uppercase tracking-wider">Branch</th>
-                    <th scope="col" class="px-6 py-4 text-left text-[10px] font-semibold text-[#1a237e] uppercase tracking-wider">Branch Number</th>
-                    <th scope="col" class="px-6 py-4 text-left text-[10px] font-semibold text-[#1a237e] uppercase tracking-wider">Status</th>
-                </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-                {% for member in members %}
-                <tr class="hover:bg-gray-50 transition-colors duration-150">
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="text-xs font-medium text-[#1a237e] cursor-pointer hover:text-[#283593]" onclick="showMemberDetails('{{ member.card_number }}', '{{ member.name }} {{ member.surname }}', '{{ member.branch }}', '{{ member.gender }}', '{{ member.phone_number }}', '{{ member.address }}', '{{ member.picture_url }}', '{{ member.branch_member_number }}', '{{ member.church_title }}')">
-                            {{ member.card_number }}
-                        </div>
-                        
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="text-xs text-gray-900">{{ member.church_title|default:"-" }}</div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="flex items-center">
-                            <div class="h-8 w-8 flex-shrink-0">
-                                <img class="h-8 w-8 rounded-full object-cover" src="{{ member.picture_url }}" alt="">
-                            </div>
-                            <div class="ml-4">
-                                <div class="text-xs font-medium text-gray-900">{{ member.name }} {{ member.surname }}</div>
-                            </div>
-                        </div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="text-xs text-gray-900">{{ member.branch }}</div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="text-xs text-gray-900">{{ member.branch_member_number }}</div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="px-2 py-0.5 inline-flex text-[10px] leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                            Active
-                        </span>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-right text-xs font-medium">
-                        <div class="flex justify-end space-x-2">
-                            <button onclick="showPaymentHistory('{{ member.card_number }}')" class="inline-flex items-center px-2 py-1 text-[10px] bg-green-50 text-green-700 rounded-md hover:bg-green-100 transition-colors duration-200">
-                                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg>
-                                Card Payments
-                            </button>
-                            <button onclick="showDependents('{{ member.card_number }}', '{{ member.name }} {{ member.surname }}')" class="inline-flex items-center px-2 py-1 text-[10px] bg-[#e8eaf6] text-[#1a237e] rounded-md hover:bg-[#c5cae9] transition-colors duration-200">
-                                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                                </svg>
-                                Dependents ({{ member.dependent_count }})
-                            </button>
-                            <div class="flex items-center">
-                                <a href="{% url 'edit_member' pk=member.card_number %}" class="inline-flex items-center px-2 py-1 text-[10px] bg-[#e8eaf6] text-[#1a237e] rounded-md hover:bg-[#c5cae9] transition-colors duration-200">
-                                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                    </svg>
-                                    Edit
-                                </a>
-                            </div>
-                        </div>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    {% for member in members %}
+    <div class="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-200"
+         data-card-number="{{ member.card_number }}"
+         data-name="{{ member.name }} {{ member.surname }}"
+         data-branch="{{ member.branch }}">
+        <!-- Card Header with Image -->
+        <div class="relative h-24 bg-gradient-to-r from-[#1a237e] to-[#283593]">
+            <div class="absolute -bottom-10 left-4">
+                <img class="h-20 w-20 rounded-full border-4 border-white object-cover" src="{{ member.picture_url }}" alt="">
+            </div>
+        </div>
+
+        <!-- Card Content -->
+        <div class="pt-12 pb-6 px-4">
+            <h3 class="text-lg font-bold text-gray-900">{{ member.name }} {{ member.surname }}</h3>
+            <p class="text-sm text-[#1a237e] font-medium">{{ member.card_number }}</p>
+
+            <div class="mt-4 space-y-2">
+                <div class="flex items-center text-sm">
+                    <span class="font-medium text-gray-500 w-24">Branch:</span>
+                    <span>{{ member.branch }}</span>
+                </div>
+                <div class="flex items-center text-sm">
+                    <span class="font-medium text-gray-500 w-24">Branch #:</span>
+                    <span>{{ member.branch_member_number }}</span>
+                </div>
+                <div class="flex items-center text-sm">
+                    <span class="font-medium text-gray-500 w-24">Title:</span>
+                    <span>{{ member.church_title|default:"-" }}</span>
+                </div>
+            </div>
+
+            <!-- Card Actions -->
+            <div class="mt-6 flex flex-wrap gap-2">
+                <button onclick="showMemberDetails('{{ member.card_number }}', '{{ member.name }} {{ member.surname }}', '{{ member.branch }}', '{{ member.gender }}', '{{ member.phone_number }}', '{{ member.address }}', '{{ member.picture_url }}', '{{ member.branch_member_number }}', '{{ member.church_title }}')"
+                class="px-3 py-1.5 bg-[#e8eaf6] text-[#1a237e] text-xs rounded-lg hover:bg-[#c5cae9] transition-colors">
+                    View Details
+                </button>
+                <button onclick="showPaymentHistory('{{ member.card_number }}')"
+                class="px-3 py-1.5 bg-green-50 text-green-700 text-xs rounded-lg hover:bg-green-100 transition-colors">
+                    Payments
+                </button>
+                <button onclick="showDependents('{{ member.card_number }}', '{{ member.name }} {{ member.surname }}')"
+                class="px-3 py-1.5 bg-blue-50 text-blue-700 text-xs rounded-lg hover:bg-blue-100 transition-colors">
+                    Dependents ({{ member.dependent_count }})
+                </button>
+                <a href="{% url 'edit_member' pk=member.card_number %}"
+                class="px-3 py-1.5 bg-yellow-50 text-yellow-700 text-xs rounded-lg hover:bg-yellow-100 transition-colors">
+                    Edit
+                </a>
+            </div>
+        </div>
     </div>
+    {% endfor %}
 </div>
 </div>
 <!-- Member Detail Modal -->
@@ -389,23 +379,37 @@
     // Search functionality
     document.getElementById('table-search').addEventListener('keyup', function() {
         const searchText = this.value.toLowerCase();
-        const tableRows = document.querySelectorAll('tbody tr');
-    
-        tableRows.forEach(row => {
-            const cardNumber = row.querySelector('td:nth-child(1)').textContent.toLowerCase();
-            const name = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
-            const branch = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
-    
-            if (cardNumber.includes(searchText) || 
-                name.includes(searchText) || 
+        console.log('Searching for:', searchText);  // Debug log
+
+        // Select all member cards
+        const memberCards = document.querySelectorAll('.grid > div');
+        console.log('Found', memberCards.length, 'cards');  // Debug log
+
+        memberCards.forEach(card => {
+            // Get data from data attributes which is more reliable
+            const cardNumber = (card.getAttribute('data-card-number') || '').toLowerCase();
+            const name = (card.getAttribute('data-name') || '').toLowerCase();
+            const branch = (card.getAttribute('data-branch') || '').toLowerCase();
+
+            // Debug log for first card to verify data
+            if (memberCards[0] === card) {
+                console.log('First card data:', {cardNumber, name, branch});
+            }
+
+            // Check if any of the card data includes the search text
+            if (cardNumber.includes(searchText) ||
+                name.includes(searchText) ||
                 branch.includes(searchText)) {
-                row.style.display = '';
+                card.style.display = '';
             } else {
-                row.style.display = 'none';
+                card.style.display = 'none';
             }
         });
     });
     
+    // Add this line to verify the search input is properly found
+    console.log('Search input found:', document.getElementById('table-search') !== null);
+
     function showMemberDetails(cardNumber, name, branch, gender, phone, address, pictureUrl, branchMemberNumber, churchTitle) {
         // Debug to see what's being passed
         console.log("Modal data:", {cardNumber, name, branch, gender, phone, address, pictureUrl, branchMemberNumber, churchTitle});
