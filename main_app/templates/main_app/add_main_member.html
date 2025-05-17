@@ -4,8 +4,8 @@
 {% block title %}Add Member{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto p-6">
-    <!-- Loading Indicator remains unchanged -->
+<div class="max-w-4xl mx-auto p-6 min-h-screen bg-gradient-to-br from-blue-50 to-purple-100">
+    <!-- Loading Indicators -->
     <div id="validating-indicator" class="hidden fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 flex items-center justify-center z-50">
         <div class="bg-white p-6 rounded-lg shadow-xl flex items-center space-x-4">
             <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -19,75 +19,71 @@
         </div>
     </div>
 
-    <div class="bg-white rounded-xl shadow-lg border border-gray-200">
-        <!-- Form Header remains unchanged -->
-        <div class="border-b border-gray-200 p-6">
-            <div class="flex items-center justify-between">
-                <h1 class="text-xl font-semibold text-gray-900">Add New Member</h1>
-                <a href="{% url 'member_list' %}" class="text-blue-600 hover:text-blue-700 font-medium">
-                    Back to Members
-                </a>
-            </div>
+    <div class="bg-white rounded-2xl shadow-xl border border-blue-100">
+        <!-- Form Header -->
+        <div class="border-b border-blue-100 p-8 flex items-center justify-between">
+            <h1 class="text-2xl font-bold text-blue-900">Add New Member</h1>
+            <a href="{% url 'member_list' %}" class="text-blue-700 hover:text-blue-900 font-medium">
+                Back to Members
+            </a>
         </div>
-        <!-- Form Content with updated input styling -->
-        <div class="p-6">
-            <form method="post" class="space-y-6" id="memberForm" action="{% url 'add_main_member' %}">
+        <!-- Form Content -->
+        <div class="p-8">
+            <form method="post" class="space-y-8" id="memberForm" action="{% url 'add_main_member' %}">
                 {% csrf_token %}
-                
                 <!-- Main Member Section -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {% for field in form %}
-                        {% if field.name != 'branch_member_number' and field.name != 'church_title' %}
-                        <div class="space-y-2">
-                            <label class="block text-sm font-medium text-gray-700">
-                                {{ field.label }}
-                            </label>
-                            {% if field.name == 'card_number' %}
-                            <div class="flex space-x-2">
-                                {{ field|add_class:"mt-1 block w-full rounded-md border-2 border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" }}
-                                <button type="button" onclick="validateCardNumber()" class="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700">
-                                    Validate
-                                </button>
-                            </div>
-                            {% else %}
-                            {{ field|add_class:"mt-1 block w-full rounded-md border-2 border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" }}
-                            {% endif %}
-                            {% if field.errors %}
-                            <p class="text-red-500 text-xs mt-1">{{ field.errors.0 }}</p>
-                            {% endif %}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                    {% for field in form %}
+                    {% if field.name != 'branch_member_number' and field.name != 'church_title' %}
+                    <div>
+                        <label class="block text-sm font-semibold text-blue-900 mb-2">
+                            {{ field.label }}
+                        </label>
+                        {% if field.name == 'card_number' %}
+                        <div class="flex space-x-2">
+                            {{ field|add_class:"mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm" }}
+                            <button type="button" onclick="validateCardNumber()" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">
+                                Validate
+                            </button>
                         </div>
+                        {% else %}
+                        {{ field|add_class:"mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm" }}
                         {% endif %}
-                        {% endfor %}
-                        
-                        <!-- Church Title field -->
-                        <div class="space-y-2">
-                            <label class="block text-sm font-medium text-gray-700">
-                                Church Title
-                            </label>
-                            <select name="church_title" id="id_church_title" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
-                                <option value="">-- Select Title --</option>
-                                <option value="OVERSEERER">OVERSEERER</option>
-                                <option value="Reverend">REVEREND</option>
-                                <option value="EVANGELIST">EVANGELIST</option>
-                                <option value="CONGREGANT">CONGREGANT</option>
-                                <option value="MAMKHOKELI">MAMKHOKELI</option>
-                            </select>
-                        </div>
+                        {% if field.errors %}
+                        <p class="text-red-500 text-xs mt-1">{{ field.errors.0 }}</p>
+                        {% endif %}
                     </div>
+                    {% endif %}
+                    {% endfor %}
 
-                <!-- Dependent Section with updated input styling -->
-                <div class="mt-8 border-t pt-8">
+                    <!-- Church Title field -->
+                    <div>
+                        <label class="block text-sm font-semibold text-blue-900 mb-2">
+                            Church Title
+                        </label>
+                        <select name="church_title" id="id_church_title" class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                            <option value="">-- Select Title --</option>
+                            <option value="OVERSEERER">OVERSEERER</option>
+                            <option value="Reverend">REVEREND</option>
+                            <option value="EVANGELIST">EVANGELIST</option>
+                            <option value="CONGREGANT">CONGREGANT</option>
+                            <option value="MAMKHOKELI">MAMKHOKELI</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Dependent Section -->
+                <div class="mt-10 border-t pt-8">
                     <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-xl font-semibold text-gray-900">Add Dependents (Optional)</h2>
-                        <button type="button" onclick="addDependentSection()" class="px-4 py-2 bg-green-600 text-white rounded-md text-sm font-medium hover:bg-green-700">
+                        <h2 class="text-xl font-semibold text-blue-900">Add Dependents (Optional)</h2>
+                        <button type="button" onclick="addDependentSection()" class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700">
                             Add Another Dependent
                         </button>
                     </div>
-                    
                     <div id="dependents-container">
                         <div class="dependent-section mb-6 border p-4 rounded-lg">
                             <div class="flex justify-between items-center mb-4">
-                                <h3 class="font-medium text-gray-900">Dependent #1</h3>
+                                <h3 class="font-medium text-blue-900">Dependent #1</h3>
                                 <button type="button" onclick="toggleDependent(this)" class="text-gray-500 hover:text-gray-700">
                                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -95,13 +91,13 @@
                                 </button>
                             </div>
                             <div class="dependent-fields grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div class="space-y-2">
-                                    <label class="block text-sm font-medium text-gray-700">First Name</label>
-                                    <input type="text" name="dependent_first_name[]" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                <div>
+                                    <label class="block text-sm font-medium text-blue-900 mb-1">First Name</label>
+                                    <input type="text" name="dependent_first_name[]" class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                                 </div>
-                                <div class="space-y-2">
-                                    <label class="block text-sm font-medium text-gray-700">Last Name</label>
-                                    <input type="text" name="dependent_last_name[]" class="mt-1 block w-full rounded-md border-2 border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                <div>
+                                    <label class="block text-sm font-medium text-blue-900 mb-1">Last Name</label>
+                                    <input type="text" name="dependent_last_name[]" class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                                 </div>
                             </div>
                         </div>
@@ -109,11 +105,11 @@
                 </div>
 
                 <!-- Form Actions -->
-                <div class="flex justify-end space-x-3 pt-6 border-t border-gray-200">
-                    <button type="button" onclick="history.back()" class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
+                <div class="flex justify-end space-x-3 pt-8 border-t border-blue-100 mt-6">
+                    <button type="button" onclick="history.back()" class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
                         Cancel
                     </button>
-                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700">
+                    <button type="submit" class="px-6 py-3 bg-blue-700 text-white rounded-lg text-sm font-semibold hover:bg-blue-800 transition">
                         Save Member
                     </button>
                 </div>
@@ -122,66 +118,49 @@
     </div>
 </div>
 <script>
-
     function showSaving() {
         document.getElementById('saving-indicator').classList.remove('hidden');
     }
-    
     function hideSaving() {
         document.getElementById('saving-indicator').classList.add('hidden');
     }
-// Add this to your existing JavaScript in the template
-document.getElementById('memberForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    showSaving();
-    
-    const formData = new FormData(this);
-    
-    // Debug: Log form data
-    console.log("Form data being submitted:");
-    for (let pair of formData.entries()) {
-        console.log(pair[0] + ': ' + pair[1]);
-    }
-    
-    fetch(this.action, {
-        method: 'POST',
-        body: formData,
-        headers: {
-            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        console.log("Response data:", data);
-        if (data.success) {
-            // Success - redirect to member list
-            window.location.href = "{% url 'member_list' %}";
-        } else {
-            // Error - show message
-            hideSaving();
-            if (data.errors) {
-                alert("Form validation errors: " + JSON.stringify(data.errors));
-            } else if (data.error) {
-                alert("Error: " + data.error);
-            } else {
-                alert("An unknown error occurred");
+    document.getElementById('memberForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        showSaving();
+        const formData = new FormData(this);
+        fetch(this.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
             }
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        hideSaving();
-        alert("An error occurred: " + error);
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = "{% url 'member_list' %}";
+            } else {
+                hideSaving();
+                if (data.errors) {
+                    alert("Form validation errors: " + JSON.stringify(data.errors));
+                } else if (data.error) {
+                    alert("Error: " + data.error);
+                } else {
+                    alert("An unknown error occurred");
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            hideSaving();
+            alert("An error occurred: " + error);
+        });
     });
-});
-
 
     function validateCardNumber() {
         let cardNumber = document.getElementById('id_card_number').value;
         let indicator = document.getElementById('validating-indicator');
-        
         indicator.classList.remove('hidden');
-        
         fetch(`/validate-card-number-add/?card_number=${cardNumber}`)
             .then(response => response.json())
             .then(data => {
@@ -201,22 +180,17 @@ document.getElementById('memberForm').addEventListener('submit', function(e) {
     }
 
     let dependentCount = 1;
-
     function addDependentSection() {
         dependentCount++;
         const container = document.getElementById('dependents-container');
         const template = document.querySelector('.dependent-section').cloneNode(true);
-        
         template.querySelector('h3').textContent = `Dependent #${dependentCount}`;
         template.querySelectorAll('input').forEach(input => input.value = '');
-        
         container.appendChild(template);
     }
-
     function toggleDependent(button) {
         const fields = button.closest('.dependent-section').querySelector('.dependent-fields');
         fields.classList.toggle('hidden');
-        
         const path = button.querySelector('path');
         if (fields.classList.contains('hidden')) {
             path.setAttribute('d', 'M9 5l7 7-7 7');
