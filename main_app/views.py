@@ -49,6 +49,7 @@ from .models import Elders, MainMembers
 from django.http import JsonResponse
 from base64 import b64encode
 from django.db import connection
+from datetime import datetime
 from django.shortcuts import render
 from django.db import connection
 from django.http import HttpResponse
@@ -117,13 +118,14 @@ def fund_report(request):
         "selected_fund_type": selected_fund_type,
     })
 
+@login_required  # Add this decorator if picture uploads should require login
 @require_http_methods(["GET", "POST"])
 def upload_picture(request):
     if request.method == 'POST':
         if 'picture' in request.FILES:
             picture = request.FILES['picture']
             branch_member_number = request.POST.get('branch_member_number')
-            
+
             # First verify the member exists
             with connection.cursor() as cursor:
                 cursor.execute("""
@@ -132,37 +134,57 @@ def upload_picture(request):
                     WHERE Branch_Member_Number = %s
                 """, [branch_member_number])
                 member_exists = cursor.fetchone()
-                
+
                 if not member_exists:
                     messages.error(request, 'Invalid Branch Member Number. Please enter a valid member number.')
                     return redirect('upload_picture')
-            
+
             # Process image if member exists
-            img = Image.open(picture)
-            if img.mode in ('RGBA', 'P'): 
-                img = img.convert('RGB')
-            
-            max_size = (800, 800)
-            img.thumbnail(max_size, Image.Resampling.LANCZOS)
-            
-            buffer = BytesIO()
-            img.save(buffer, format='JPEG', quality=10, optimize=True)
-            compressed_image = buffer.getvalue()
-            
-            if len(compressed_image) > 65000:
-                messages.error(request, 'Image is too large. Please use a smaller image.')
+            try:
+                img = Image.open(picture)
+                if img.mode in ('RGBA', 'P'):
+                    img = img.convert('RGB')
+
+                max_size = (800, 800)
+                img.thumbnail(max_size, Image.Resampling.LANCZOS)
+
+                buffer = BytesIO()
+                img.save(buffer, format='JPEG', quality=10, optimize=True)
+                compressed_image = buffer.getvalue()
+
+                if len(compressed_image) > 65000:
+                    messages.error(request, 'Image is too large. Please use a smaller image.')
+                    return redirect('upload_picture')
+
+                # Check if picture already exists
+                with connection.cursor() as cursor:
+                    cursor.execute("""
+                        SELECT COUNT(*) FROM Member_Pictures
+                        WHERE Branch_Member_Number = %s
+                    """, [branch_member_number])
+                    picture_exists = cursor.fetchone()[0] > 0
+
+                # Insert or update the picture
+                with connection.cursor() as cursor:
+                    if picture_exists:
+                        cursor.execute("""
+                            UPDATE Member_Pictures
+                            SET picture_data = %s, upload_date = %s
+                            WHERE Branch_Member_Number = %s
+                        """, [compressed_image, timezone.now(), branch_member_number])
+                    else:
+                        cursor.execute("""
+                            INSERT INTO Member_Pictures (Branch_Member_Number, picture_data, upload_date) 
+                            VALUES (%s, %s, %s)
+                        """, [branch_member_number, compressed_image, timezone.now()])
+
+                messages.success(request, 'Picture uploaded successfully!')
+                return redirect('member_list')  # Changed from 'home' to 'member_list'
+
+            except Exception as e:
+                messages.error(request, f'Error: {str(e)}')
                 return redirect('upload_picture')
-            
-            # Insert the picture
-            with connection.cursor() as cursor:
-                cursor.execute("""
-                    INSERT INTO Member_Pictures (Branch_Member_Number, picture_data, upload_date) 
-                    VALUES (%s, %s, %s)
-                """, [branch_member_number, compressed_image, timezone.now()])
-            
-            messages.success(request, 'Picture uploaded successfully!')
-            return redirect('home')
-            
+
     return render(request, 'main_app/upload_picture.html')
 
 
