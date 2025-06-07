@@ -145,28 +145,18 @@ def upload_picture(request):
                 if img.mode in ('RGBA', 'P'):
                     img = img.convert('RGB')
 
-                # Use a larger max size for better quality
-                max_size = (1200, 1200)  # Increased from 800x800
+                max_size = (800, 800)
                 img.thumbnail(max_size, Image.Resampling.LANCZOS)
 
                 buffer = BytesIO()
-                # Increase quality from 10 to 60-75 for better image quality
-                img.save(buffer, format='JPEG', quality=60, optimize=True)
+                img.save(buffer, format='JPEG', quality=10, optimize=True)
                 compressed_image = buffer.getvalue()
 
-                # Increase max file size from 65KB to 250KB
-                max_size_bytes = 250000  # Increased from 65000
-                if len(compressed_image) > max_size_bytes:
-                    # Try again with lower quality if the file is still too large
-                    buffer = BytesIO()
-                    img.save(buffer, format='JPEG', quality=40, optimize=True)
-                    compressed_image = buffer.getvalue()
+                if len(compressed_image) > 65000:
+                    messages.error(request, 'Image is too large. Please use a smaller image.')
+                    return redirect('upload_picture')
 
-                    if len(compressed_image) > max_size_bytes:
-                        messages.error(request, 'Image is too large. Please use a smaller image.')
-                        return redirect('upload_picture')
-
-                # Insert or update as before...
+                # Check if picture already exists
                 with connection.cursor() as cursor:
                     cursor.execute("""
                         SELECT COUNT(*) FROM Member_Pictures
@@ -174,6 +164,7 @@ def upload_picture(request):
                     """, [branch_member_number])
                     picture_exists = cursor.fetchone()[0] > 0
 
+                # Insert or update the picture
                 with connection.cursor() as cursor:
                     if picture_exists:
                         cursor.execute("""
@@ -188,7 +179,7 @@ def upload_picture(request):
                         """, [branch_member_number, compressed_image, timezone.now()])
 
                 messages.success(request, 'Picture uploaded successfully!')
-                return redirect('member_list')
+                return redirect('member_list')  # Changed from 'home' to 'member_list'
 
             except Exception as e:
                 messages.error(request, f'Error: {str(e)}')

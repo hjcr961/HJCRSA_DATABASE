@@ -11,7 +11,7 @@
         transform: translate(-50%, -50%);
         z-index: 9999;
     }
-    
+
     .spinner {
         width: 50px;
         height: 50px;
@@ -20,12 +20,12 @@
         border-radius: 50%;
         animation: spin 1s linear infinite;
     }
-    
+
     @keyframes spin {
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
     }
-    
+
     .loading-overlay {
         position: fixed;
         top: 0;
@@ -44,13 +44,117 @@
     .transition-all {
         transition: all 0.3s ease;
     }
+
+    .pagination-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 2rem;
+        flex-wrap: wrap;
+    }
+
+    .pagination-btn {
+        padding: 0.5rem 0.75rem;
+        border: 1px solid #d1d5db;
+        background: white;
+        color: #374151;
+        border-radius: 0.375rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 0.875rem;
+        min-width: 2.5rem;
+        text-align: center;
+    }
+
+    .pagination-btn:hover:not(.disabled) {
+        background: #f3f4f6;
+        border-color: #9ca3af;
+    }
+
+    .pagination-btn.active {
+        background: #1a237e;
+        color: white;
+        border-color: #1a237e;
+    }
+
+    .pagination-btn.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .filter-dropdown {
+        position: relative;
+        display: inline-block;
+    }
+
+    .filter-content {
+        display: none;
+        position: absolute;
+        background-color: white;
+        min-width: 200px;
+        box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+        z-index: 1;
+        border-radius: 0.5rem;
+        border: 1px solid #e5e7eb;
+        top: 100%;
+        right: 0;
+        margin-top: 0.25rem;
+    }
+
+    .filter-content.show {
+        display: block;
+    }
+
+    .filter-option {
+        padding: 0.75rem 1rem;
+        cursor: pointer;
+        border-bottom: 1px solid #f3f4f6;
+        transition: background-color 0.2s;
+    }
+
+    .filter-option:hover {
+        background-color: #f9fafb;
+    }
+
+    .filter-option:last-child {
+        border-bottom: none;
+    }
+
+    .no-results {
+        text-align: center;
+        padding: 3rem;
+        color: #6b7280;
+    }
+
+    .results-info {
+        display: flex;
+        justify-content: between;
+        align-items: center;
+        margin-bottom: 1rem;
+        font-size: 0.875rem;
+        color: #6b7280;
+    }
+
+    @media (max-width: 640px) {
+        .pagination-container {
+            gap: 0.25rem;
+        }
+
+        .pagination-btn {
+            padding: 0.375rem 0.5rem;
+            font-size: 0.75rem;
+            min-width: 2rem;
+        }
+    }
 </style>
 
 <div id="loadingOverlay" class="loading-overlay">
     <div class="loading-spinner">
         <div class="spinner"></div>
     </div>
-</div>
+</div> <!-- Add this closing div -->
+
 <!-- Main Container -->
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <!-- Enhanced Header Section -->
@@ -63,10 +167,13 @@
                         <h1 class="text-2xl font-bold text-[#1a237e]">Members Directory</h1>
                         <div class="flex space-x-2">
                             <span class="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm font-medium">
-                                Members: {{ members|length }}
+                                Total: <span id="totalMembersCount">{{ members|length }}</span>
                             </span>
                             <span class="px-3 py-1 bg-green-50 text-green-700 rounded-full text-sm font-medium">
                                 Dependents: {{ dependents|length }}
+                            </span>
+                            <span class="px-3 py-1 bg-purple-50 text-purple-700 rounded-full text-sm font-medium">
+                                Showing: <span id="showingCount">0</span>
                             </span>
                         </div>
                     </div>
@@ -81,20 +188,67 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                             </svg>
                         </div>
+                        <button id="clearSearch" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 hidden">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
                     </div>
                 </div>
+<!-- Filters & Action Buttons -->
+<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <!-- Filters -->
+    <div class="flex flex-wrap gap-2 items-center">
+        <!-- Branch Filter -->
+        <div class="filter-dropdown">
+            <button id="branchFilterBtn" class="inline-flex items-center px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-5 0H3m2 0h3M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                </svg>
+                Branch <span id="branchFilterText">: All</span>
+                <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+            </button>
+            <div id="branchFilterContent" class="filter-content">
+                <div class="filter-option" data-branch="">All Branches</div>
+                <!-- Branch options will be populated dynamically -->
+            </div>
+        </div>
 
-                <!-- Action Buttons & Tabs -->
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center">
-                    <!-- Tabs -->
-                    <div class="flex space-x-1 border-b border-gray-200 w-full sm:w-auto">
-                        <button class="px-4 py-2 text-sm font-medium text-[#1a237e] border-b-2 border-[#1a237e]">All Members</button>
-                        <button class="px-4 py-2 text-sm font-medium text-gray-500 hover:text-[#1a237e]">Active</button>
-                        <button class="px-4 py-2 text-sm font-medium text-gray-500 hover:text-[#1a237e]">Inactive</button>
-                    </div>
+        <!-- Church Title Filter -->
+        <div class="filter-dropdown">
+            <button id="churchTitleFilterBtn" class="inline-flex items-center px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-5 0H3m2 0h3M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                </svg>
+                Title <span id="churchTitleFilterText">: All</span>
+                <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+            </button>
+            <div id="churchTitleFilterContent" class="filter-content">
+                <div class="filter-option" data-church-title="">All Titles</div>
+                <!-- Church title options will be populated dynamically -->
+            </div>
+        </div>
+
+        <!-- Items per page -->
+        <select id="itemsPerPage" class="px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg border-0 focus:ring-2 focus:ring-blue-200">
+            <option value="12">12 per page</option>
+            <option value="24" selected>24 per page</option>
+            <option value="48">48 per page</option>
+            <option value="96">96 per page</option>
+        </select>
+
+        <!-- Clear Filters -->
+        <button id="clearFilters" class="px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-all">
+            Clear Filters
+        </button>
+    </div>
 
                     <!-- Action Buttons -->
-                    <div class="flex flex-wrap gap-2 mt-4 sm:mt-0">
+                    <div class="flex flex-wrap gap-2">
                         <a href="{% url 'add_main_member' %}"
                             class="inline-flex items-center px-3 py-2 text-xs bg-[#1a237e] text-white rounded-lg hover:bg-[#283593] transition-all shadow-sm hover:shadow-md">
                             <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -102,22 +256,21 @@
                             </svg>
                             Add Member
                         </a>
-                        <a href="{% url 'add_treasury' %}" 
+                        <a href="{% url 'add_treasury' %}"
                             class="inline-flex items-center px-3 py-2 text-xs bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all shadow-sm hover:shadow-md">
                             <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
                             Add Payment
                         </a>
-                        <a href="{% url 'add_dependent' %}" 
+                        <a href="{% url 'add_dependent' %}"
                             class="inline-flex items-center px-3 py-2 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all shadow-sm hover:shadow-md">
                             <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
                             </svg>
                             Add Dependent
                         </a>
-                        <!-- New Button for Add Dependant Payment -->
-                        <a href="{% url 'add_treasury_dep' %}" 
+                        <a href="{% url 'add_treasury_dep' %}"
                             class="inline-flex items-center px-3 py-2 text-xs bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-all shadow-sm hover:shadow-md">
                             <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
@@ -128,67 +281,95 @@
                 </div>
             </div>
         </div>
+
+    <!-- Results Info -->
+    <div class="results-info mb-4">
+        <span id="resultsInfo">Loading...</span>
     </div>
-    <!-- Table Section -->
-<!-- Table Section -->
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-    {% for member in members %}
-    <div class="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-200"
-         data-card-number="{{ member.card_number }}"
-         data-name="{{ member.name }} {{ member.surname }}"
-         data-branch="{{ member.branch }}">
-        <!-- Card Header with Image -->
-        <div class="relative h-24 bg-gradient-to-r from-[#1a237e] to-[#283593]">
-            <div class="absolute -bottom-10 left-4">
-                <img class="h-20 w-20 rounded-full border-4 border-white object-cover" src="{{ member.picture_url }}" alt="">
+
+    <!-- Members Grid -->
+    <div id="membersGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {% for member in members %}
+        <div class="member-card bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-200"
+             data-card-number="{{ member.card_number }}"
+             data-name="{{ member.name }} {{ member.surname }}"
+             data-branch="{{ member.branch }}"
+             data-church-title="{{ member.church_title|default:'' }}"
+             data-phone="{{ member.phone_number }}"
+             data-address="{{ member.address }}"
+             data-picture="{{ member.picture_url }}"
+             data-branch-number="{{ member.branch_member_number }}"
+             data-church-title="{{ member.church_title }}">
+
+            <!-- Card Header with Image -->
+            <div class="relative h-24 bg-gradient-to-r from-[#1a237e] to-[#283593]">
+                <div class="absolute -bottom-10 left-4">
+                    <img class="h-20 w-20 rounded-full border-4 border-white object-cover"
+                         src="{{ member.picture_url }}"
+                         alt="{{ member.name }}"
+                         loading="lazy">
+                </div>
+            </div>
+
+            <!-- Card Content -->
+            <div class="pt-12 pb-6 px-4">
+                <h3 class="text-lg font-bold text-gray-900">{{ member.name }} {{ member.surname }}</h3>
+                <p class="text-sm text-[#1a237e] font-medium">{{ member.card_number }}</p>
+
+                <div class="mt-4 space-y-2">
+                    <div class="flex items-center text-sm">
+                        <span class="font-medium text-gray-500 w-24">Branch:</span>
+                        <span>{{ member.branch }}</span>
+                    </div>
+                    <div class="flex items-center text-sm">
+                        <span class="font-medium text-gray-500 w-24">Branch #:</span>
+                        <span>{{ member.branch_member_number }}</span>
+                    </div>
+                    <div class="flex items-center text-sm">
+                        <span class="font-medium text-gray-500 w-24">Title:</span>
+                        <span>{{ member.church_title|default:"-" }}</span>
+                    </div>
+                </div>
+
+                <!-- Card Actions -->
+                <div class="mt-6 flex flex-wrap gap-2">
+                    <button onclick="showMemberDetails(this)"
+                    class="px-3 py-1.5 bg-[#e8eaf6] text-[#1a237e] text-xs rounded-lg hover:bg-[#c5cae9] transition-colors">
+                        View Details
+                    </button>
+                    <button onclick="showPaymentHistory('{{ member.card_number }}')"
+                    class="px-3 py-1.5 bg-green-50 text-green-700 text-xs rounded-lg hover:bg-green-100 transition-colors">
+                        Card Payments
+                    </button>
+                    <button onclick="showDependents('{{ member.card_number }}', '{{ member.name }} {{ member.surname }}')"
+                    class="px-3 py-1.5 bg-blue-50 text-blue-700 text-xs rounded-lg hover:bg-blue-100 transition-colors">
+                        Dependents ({{ member.dependent_count }})
+                    </button>
+                    <a href="{% url 'edit_member' pk=member.card_number %}"
+                    class="px-3 py-1.5 bg-yellow-50 text-yellow-700 text-xs rounded-lg hover:bg-yellow-100 transition-colors">
+                        Edit
+                    </a>
+                </div>
             </div>
         </div>
-
-        <!-- Card Content -->
-        <div class="pt-12 pb-6 px-4">
-            <h3 class="text-lg font-bold text-gray-900">{{ member.name }} {{ member.surname }}</h3>
-            <p class="text-sm text-[#1a237e] font-medium">{{ member.card_number }}</p>
-
-            <div class="mt-4 space-y-2">
-                <div class="flex items-center text-sm">
-                    <span class="font-medium text-gray-500 w-24">Branch:</span>
-                    <span>{{ member.branch }}</span>
-                </div>
-                <div class="flex items-center text-sm">
-                    <span class="font-medium text-gray-500 w-24">Branch #:</span>
-                    <span>{{ member.branch_member_number }}</span>
-                </div>
-                <div class="flex items-center text-sm">
-                    <span class="font-medium text-gray-500 w-24">Title:</span>
-                    <span>{{ member.church_title|default:"-" }}</span>
-                </div>
-            </div>
-
-            <!-- Card Actions -->
-            <div class="mt-6 flex flex-wrap gap-2">
-                <button onclick="showMemberDetails('{{ member.card_number }}', '{{ member.name }} {{ member.surname }}', '{{ member.branch }}', '{{ member.gender }}', '{{ member.phone_number }}', '{{ member.address }}', '{{ member.picture_url }}', '{{ member.branch_member_number }}', '{{ member.church_title }}')"
-                class="px-3 py-1.5 bg-[#e8eaf6] text-[#1a237e] text-xs rounded-lg hover:bg-[#c5cae9] transition-colors">
-                    View Details
-                </button>
-                <button onclick="showPaymentHistory('{{ member.card_number }}')"
-                class="px-3 py-1.5 bg-green-50 text-green-700 text-xs rounded-lg hover:bg-green-100 transition-colors">
-                    Payments
-                </button>
-                <button onclick="showDependents('{{ member.card_number }}', '{{ member.name }} {{ member.surname }}')"
-                class="px-3 py-1.5 bg-blue-50 text-blue-700 text-xs rounded-lg hover:bg-blue-100 transition-colors">
-                    Dependents ({{ member.dependent_count }})
-                </button>
-                <a href="{% url 'edit_member' pk=member.card_number %}"
-                class="px-3 py-1.5 bg-yellow-50 text-yellow-700 text-xs rounded-lg hover:bg-yellow-100 transition-colors">
-                    Edit
-                </a>
-            </div>
-        </div>
+        {% endfor %}
     </div>
-    {% endfor %}
+
+    <!-- No Results Message -->
+    <div id="noResults" class="no-results hidden">
+        <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+        </svg>
+        <h3 class="text-lg font-medium text-gray-900 mb-2">No members found</h3>
+        <p class="text-gray-500">Try adjusting your search or filter criteria</p>
+    </div>
+
+    <!-- Pagination -->
+    <div id="paginationContainer" class="pagination-container">
+        <!-- Pagination buttons will be generated dynamically -->
+    </div>
 </div>
-</div>
-<!-- Member Detail Modal -->
+
 <!-- Member Detail Modal -->
 <div id="memberDetailModal" tabindex="-1" aria-hidden="true" class="fixed top-0 left-0 right-0 z-50 hidden w-full p-4 overflow-x-hidden overflow-y-auto md:inset-0 h-[calc(100%-1rem)] max-h-full bg-black bg-opacity-50">
     <div class="relative w-full max-w-2xl max-h-full mx-auto mt-10">
@@ -237,7 +418,7 @@
                             <p id="modalChurchTitle" class="mt-1 text-sm font-medium text-gray-900"></p>
                         </div>
                     </div>
-                    
+
                     <div class="space-y-6">
                         <!-- Right Column -->
                         <div class="bg-gray-50 p-4 rounded-lg">
@@ -258,7 +439,6 @@
         </div>
     </div>
 </div>
-
 
 <!-- Payment History Modal -->
 <div id="paymentHistoryModal" tabindex="-1" aria-hidden="true" class="fixed top-0 left-0 right-0 z-50 hidden w-full p-4 overflow-x-hidden overflow-y-auto md:inset-0 h-[calc(100%-1rem)] max-h-full bg-black bg-opacity-50">
@@ -298,8 +478,6 @@
     </div>
 </div>
 
-
-<!-- Dependents Modal -->
 <!-- Dependents Modal -->
 <div id="dependentsModal" tabindex="-1" aria-hidden="true" class="fixed top-0 left-0 right-0 z-50 hidden w-full p-4 overflow-x-hidden overflow-y-auto md:inset-0 h-[calc(100%-1rem)] max-h-full bg-black bg-opacity-50">
     <div class="relative w-full max-w-4xl max-h-full mx-auto mt-10">
@@ -371,79 +549,390 @@
             </div>
         </div>
     </div>
-</div>
-
 <script>
-    let currentBranchMemberNumber = '';
+    // Global variables for pagination and filtering
+            let allMembers = [];
+            let filteredMembers = [];
+            let currentPage = 1;
+            let itemsPerPage = 24;
+            let currentFilters = {
+                search: '',
+                branch: '',
+                churchTitle: ''
+};
+
+
+    // Initialize on page load
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    initializeMembers();
+    initializeEventListeners();
+    populateBranchFilter();
+    populateChurchTitleFilter();
+    updateDisplay();
+});
+
+
+    function initializeMembers() {
+        const memberCards = document.querySelectorAll('.member-card');
+        allMembers = Array.from(memberCards).map(card => ({
+            element: card,
+            cardNumber: card.dataset.cardNumber || '',
+            name: card.dataset.name || '',
+            branch: card.dataset.branch || '',
+            churchTitle: card.dataset.churchTitle || '',
+            phone: card.dataset.phone || '',
+            address: card.dataset.address || '',
+            picture: card.dataset.picture || '',
+            branchNumber: card.dataset.branchNumber || ''
+        }));
+        filteredMembers = [...allMembers];
+    }
     
+    function initializeEventListeners() {
+        const searchInput = document.getElementById('table-search');
+        const clearSearchBtn = document.getElementById('clearSearch');
+    
+        searchInput.addEventListener('input', debounce(handleSearch, 300));
+        clearSearchBtn.addEventListener('click', clearSearch);
+        document.getElementById('itemsPerPage').addEventListener('change', handleItemsPerPageChange);
+        document.getElementById('branchFilterBtn').addEventListener('click', toggleDropdown);
+        document.getElementById('churchTitleFilterBtn').addEventListener('click', toggleDropdown);
+        document.getElementById('clearFilters').addEventListener('click', clearAllFilters);
+    
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('.filter-dropdown')) {
+                closeAllDropdowns();
+            }
+        });
+    
+        document.querySelectorAll('#churchTitleFilterContent .filter-option').forEach(option => {
+            option.addEventListener('click', function() {
+                handleChurchTitleFilter(this.dataset.churchTitle);
+            });
+        });
+    }
+
+    function populateChurchTitleFilter() {
+        const churchTitles = [...new Set(allMembers.map(member => member.churchTitle).filter(title => title))].sort();
+        const churchTitleFilterContent = document.getElementById('churchTitleFilterContent');
+        const allOption = churchTitleFilterContent.querySelector('[data-church-title=""]');
+        churchTitleFilterContent.innerHTML = '';
+        churchTitleFilterContent.appendChild(allOption);
+    
+        churchTitles.forEach(title => {
+            if (title) {
+                const option = document.createElement('div');
+                option.className = 'filter-option';
+                option.dataset.churchTitle = title;
+                option.textContent = title;
+                option.addEventListener('click', () => handleChurchTitleFilter(title));
+                churchTitleFilterContent.appendChild(option);
+            }
+        });
+    
+        allOption.addEventListener('click', () => handleChurchTitleFilter(''));
+    }
+    
+    function handleChurchTitleFilter(churchTitle) {
+        currentFilters.churchTitle = churchTitle;
+        document.getElementById('churchTitleFilterText').textContent = churchTitle ? `: ${churchTitle}` : ': All';
+        closeAllDropdowns();
+        currentPage = 1;
+        applyFilters();
+    }
+    
+    
+
+    function populateBranchFilter() {
+        const branches = [...new Set(allMembers.map(member => member.branch))].sort();
+        const branchFilterContent = document.getElementById('branchFilterContent');
+        const allOption = branchFilterContent.querySelector('[data-branch=""]');
+        branchFilterContent.innerHTML = '';
+        branchFilterContent.appendChild(allOption);
+
+        branches.forEach(branch => {
+            if (branch) {
+                const option = document.createElement('div');
+                option.className = 'filter-option';
+                option.dataset.branch = branch;
+                option.textContent = branch;
+                option.addEventListener('click', () => handleBranchFilter(branch));
+                branchFilterContent.appendChild(option);
+            }
+        });
+
+        allOption.addEventListener('click', () => handleBranchFilter(''));
+    }
+
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+
+    function handleSearch(event) {
+        const searchTerm = event.target.value.toLowerCase().trim();
+        currentFilters.search = searchTerm;
+
+        const clearBtn = document.getElementById('clearSearch');
+        if (searchTerm) {
+            clearBtn.classList.remove('hidden');
+        } else {
+            clearBtn.classList.add('hidden');
+        }
+
+        currentPage = 1;
+        applyFilters();
+    }
+
+    function clearSearch() {
+        document.getElementById('table-search').value = '';
+        document.getElementById('clearSearch').classList.add('hidden');
+        currentFilters.search = '';
+        currentPage = 1;
+        applyFilters();
+    }
+
+    function handleItemsPerPageChange(event) {
+        itemsPerPage = parseInt(event.target.value);
+        currentPage = 1;
+        updateDisplay();
+    }
+
+    function toggleDropdown(event) {
+        const button = event.currentTarget;
+        const dropdown = button.nextElementSibling;
+        const isOpen = dropdown.classList.contains('show');
+
+        closeAllDropdowns();
+
+        if (!isOpen) {
+            dropdown.classList.add('show');
+        }
+    }
+
+    function closeAllDropdowns() {
+        document.querySelectorAll('.filter-content').forEach(dropdown => {
+            dropdown.classList.remove('show');
+        });
+    }
+
+    function handleBranchFilter(branch) {
+        currentFilters.branch = branch;
+        document.getElementById('branchFilterText').textContent = branch ? `: ${branch}` : ': All';
+        closeAllDropdowns();
+        currentPage = 1;
+        applyFilters();
+    }
+
+    function handleGenderFilter(gender) {
+        currentFilters.gender = gender;
+        document.getElementById('genderFilterText').textContent = gender ? `: ${gender}` : ': All';
+        closeAllDropdowns();
+        currentPage = 1;
+        applyFilters();
+    }
+
+function clearAllFilters() {
+    currentFilters = { search: '', branch: '', churchTitle: '' };
+
+    document.getElementById('table-search').value = '';
+    document.getElementById('clearSearch').classList.add('hidden');
+    document.getElementById('branchFilterText').textContent = ': All';
+    document.getElementById('churchTitleFilterText').textContent = ': All';
+
+    currentPage = 1;
+    applyFilters();
+}
+
+
+    function applyFilters() {
+        filteredMembers = allMembers.filter(member => {
+            if (currentFilters.search) {
+                const searchMatch =
+                    member.cardNumber.toLowerCase().includes(currentFilters.search) ||
+                    member.name.toLowerCase().includes(currentFilters.search) ||
+                    member.branch.toLowerCase().includes(currentFilters.search);
+                if (!searchMatch) return false;
+            }
+    
+            if (currentFilters.branch && member.branch !== currentFilters.branch) {
+                return false;
+            }
+    
+            if (currentFilters.churchTitle && member.churchTitle !== currentFilters.churchTitle) {
+                return false;
+            }
+    
+            return true;
+        });
+    
+        updateDisplay();
+    }
+    
+
+    function updateDisplay() {
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+        const currentPageMembers = filteredMembers.slice(startIndex, endIndex);
+
+        allMembers.forEach(member => {
+            member.element.style.display = 'none';
+        });
+
+        currentPageMembers.forEach(member => {
+            member.element.style.display = '';
+        });
+
+        updateResultsInfo();
+        updatePagination();
+
+        const noResults = document.getElementById('noResults');
+        const membersGrid = document.getElementById('membersGrid');
+
+        if (filteredMembers.length === 0) {
+            noResults.classList.remove('hidden');
+            membersGrid.style.display = 'none';
+        } else {
+            noResults.classList.add('hidden');
+            membersGrid.style.display = '';
+        }
+    }
+
+    function updateResultsInfo() {
+        const total = filteredMembers.length;
+        const startIndex = (currentPage - 1) * itemsPerPage + 1;
+        const endIndex = Math.min(currentPage * itemsPerPage, total);
+
+        document.getElementById('showingCount').textContent = total;
+
+        let infoText = '';
+        if (total === 0) {
+            infoText = 'No members found';
+        } else if (total <= itemsPerPage) {
+            infoText = `Showing all ${total} members`;
+        } else {
+            infoText = `Showing ${startIndex}-${endIndex} of ${total} members`;
+        }
+
+        document.getElementById('resultsInfo').textContent = infoText;
+    }
+
+    function updatePagination() {
+        const totalPages = Math.ceil(filteredMembers.length / itemsPerPage);
+        const container = document.getElementById('paginationContainer');
+
+        if (totalPages <= 1) {
+            container.innerHTML = '';
+            return;
+        }
+
+        let paginationHTML = '';
+
+        paginationHTML += `
+            <button class="pagination-btn ${currentPage === 1 ? 'disabled' : ''}"
+                    onclick="changePage(${currentPage - 1})"
+                    ${currentPage === 1 ? 'disabled' : ''}>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
+            </button>
+        `;
+
+        const maxVisiblePages = 7;
+        let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+        let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+        if (endPage - startPage + 1 < maxVisiblePages) {
+            startPage = Math.max(1, endPage - maxVisiblePages + 1);
+        }
+
+        if (startPage > 1) {
+            paginationHTML += `<button class="pagination-btn" onclick="changePage(1)">1</button>`;
+            if (startPage > 2) {
+                paginationHTML += `<span class="pagination-btn disabled">...</span>`;
+            }
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+            paginationHTML += `
+                <button class="pagination-btn ${i === currentPage ? 'active' : ''}"
+                        onclick="changePage(${i})">${i}</button>
+            `;
+        }
+
+        if (endPage < totalPages) {
+            if (endPage < totalPages - 1) {
+                paginationHTML += `<span class="pagination-btn disabled">...</span>`;
+            }
+            paginationHTML += `<button class="pagination-btn" onclick="changePage(${totalPages})">${totalPages}</button>`;
+        }
+
+        paginationHTML += `
+            <button class="pagination-btn ${currentPage === totalPages ? 'disabled' : ''}"
+                    onclick="changePage(${currentPage + 1})"
+                    ${currentPage === totalPages ? 'disabled' : ''}>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+            </button>
+        `;
+
+        container.innerHTML = paginationHTML;
+    }
+
+    function changePage(page) {
+        const totalPages = Math.ceil(filteredMembers.length / itemsPerPage);
+        if (page >= 1 && page <= totalPages) {
+            currentPage = page;
+            updateDisplay();
+
+            document.getElementById('membersGrid').scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+        }
+    }
+
     function showLoading() {
         document.getElementById('loadingOverlay').style.display = 'block';
     }
-    
+
     function hideLoading() {
         document.getElementById('loadingOverlay').style.display = 'none';
     }
-    
-    // Search functionality
-    document.getElementById('table-search').addEventListener('keyup', function() {
-        const searchText = this.value.toLowerCase();
-        console.log('Searching for:', searchText);  // Debug log
 
-        // Select all member cards
-        const memberCards = document.querySelectorAll('.grid > div');
-        console.log('Found', memberCards.length, 'cards');  // Debug log
+    function showMemberDetails(button) {
+        const card = button.closest('.member-card');
+        const member = allMembers.find(m => m.element === card);
 
-        memberCards.forEach(card => {
-            // Get data from data attributes which is more reliable
-            const cardNumber = (card.getAttribute('data-card-number') || '').toLowerCase();
-            const name = (card.getAttribute('data-name') || '').toLowerCase();
-            const branch = (card.getAttribute('data-branch') || '').toLowerCase();
+        if (!member) return;
 
-            // Debug log for first card to verify data
-            if (memberCards[0] === card) {
-                console.log('First card data:', {cardNumber, name, branch});
-            }
+        document.getElementById('modalMemberNameText').textContent = member.name;
+        document.getElementById('modalBranchMemberNumber').textContent = member.branchNumber || '';
+        document.getElementById('modalCardNumber').textContent = member.cardNumber;
+        document.getElementById('modalName').textContent = member.name;
+        document.getElementById('modalBranch').textContent = member.branch;
+        document.getElementById('modalGender').textContent = member.gender;
+        document.getElementById('modalPhone').textContent = member.phone;
+        document.getElementById('modalAddress').textContent = member.address;
+        document.getElementById('modalMemberPicture').src = member.picture || '/static/default-profile.jpg';
+        document.getElementById('modalChurchTitle').textContent = member.churchTitle || '-';
 
-            // Check if any of the card data includes the search text
-            if (cardNumber.includes(searchText) ||
-                name.includes(searchText) ||
-                branch.includes(searchText)) {
-                card.style.display = '';
-            } else {
-                card.style.display = 'none';
-            }
-        });
-    });
-    
-    // Add this line to verify the search input is properly found
-    console.log('Search input found:', document.getElementById('table-search') !== null);
-
-    function showMemberDetails(cardNumber, name, branch, gender, phone, address, pictureUrl, branchMemberNumber, churchTitle) {
-        // Debug to see what's being passed
-        console.log("Modal data:", {cardNumber, name, branch, gender, phone, address, pictureUrl, branchMemberNumber, churchTitle});
-        
-        // Set the values in the modal
-        document.getElementById('modalMemberNameText').textContent = name;
-        document.getElementById('modalBranchMemberNumber').textContent = branchMemberNumber || '';
-        document.getElementById('modalCardNumber').textContent = cardNumber;
-        document.getElementById('modalName').textContent = name;
-        document.getElementById('modalBranch').textContent = branch;
-        document.getElementById('modalGender').textContent = gender;
-        document.getElementById('modalPhone').textContent = phone;
-        document.getElementById('modalAddress').textContent = address;
-        document.getElementById('modalMemberPicture').src = pictureUrl || '/static/default-profile.jpg';
-        document.getElementById('modalChurchTitle').textContent = churchTitle || '-';
-        
-        // Show the modal
         document.getElementById('memberDetailModal').classList.remove('hidden');
     }
-    
-    
-    
+
     function closeModal() {
         document.getElementById('memberDetailModal').classList.add('hidden');
     }
-    
+
     function showPaymentHistory(cardNumber) {
         showLoading();
         fetch(`/api/member/${cardNumber}/payments/`)
@@ -451,31 +940,45 @@
             .then(data => {
                 const tbody = document.getElementById('paymentHistoryBody');
                 tbody.innerHTML = '';
-                
-                data.forEach(payment => {
-                    tbody.innerHTML += `
-                        <tr class="hover:bg-[#e8eaf6]">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${payment.fund}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">R${payment.amount}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${payment.Fund_Date_Year}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${payment.Fund_Date_Month}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${payment.payment_date}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${payment.receipt_number}</td>
+
+                if (data.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+                                No payment history found
+                            </td>
                         </tr>
                     `;
-                });
-                
+                } else {
+                    data.forEach(payment => {
+                        tbody.innerHTML += `
+                            <tr class="hover:bg-[#e8eaf6]">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${payment.fund}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">R${payment.amount}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${payment.Fund_Date_Year}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${payment.Fund_Date_Month}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${payment.payment_date}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${payment.receipt_number}</td>
+                            </tr>
+                        `;
+                    });
+                }
+
                 document.getElementById('paymentHistoryModal').classList.remove('hidden');
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to load payment history');
             })
             .finally(() => {
                 hideLoading();
             });
-    }    
-    
+    }
+
     function closePaymentModal() {
         document.getElementById('paymentHistoryModal').classList.add('hidden');
     }
-    
+
     function showDependents(cardNumber, memberName) {
         showLoading();
         fetch(`/api/member/${cardNumber}/dependents/`)
@@ -484,57 +987,84 @@
                 const tbody = document.getElementById('dependentsBody');
                 document.getElementById('dependentsModalTitle').textContent = `Dependents - ${memberName}`;
                 tbody.innerHTML = '';
-                
-                data.forEach(dependent => {
-                    tbody.innerHTML += `
-                        <tr class="hover:bg-[#e8eaf6]">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${dependent.name}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${dependent.surname}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-right">
-                                <button onclick="showDependentPaymentHistory(event, '${dependent.idDependents}', '${dependent.name} ${dependent.surname}')" 
-                                    class="inline-flex items-center px-2 py-1 text-[10px] bg-green-50 text-green-700 rounded-md hover:bg-green-100 transition-colors duration-200">
-                                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                    </svg>
-                                    Payments
-                                </button>
+
+                if (data.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="3" class="px-6 py-8 text-center text-gray-500">
+                                No dependents found
                             </td>
                         </tr>
                     `;
-                });
-                
+                } else {
+                    data.forEach(dependent => {
+                        tbody.innerHTML += `
+                            <tr class="hover:bg-[#e8eaf6]">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${dependent.name}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${dependent.surname}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right">
+                                    <button onclick="showDependentPaymentHistory(event, '${dependent.idDependents}', '${dependent.name} ${dependent.surname}')"
+                                        class="inline-flex items-center px-2 py-1 text-[10px] bg-green-50 text-green-700 rounded-md hover:bg-green-100 transition-colors duration-200">
+                                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                        Payments
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                }
+
                 document.getElementById('dependentsModal').classList.remove('hidden');
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to load dependents');
             })
             .finally(() => {
                 hideLoading();
             });
     }
-    
-    
+
+    function closeDependentsModal() {
+        document.getElementById('dependentsModal').classList.add('hidden');
+    }
+
     function showDependentPaymentHistory(event, dependentId, dependentName) {
-        event.stopPropagation(); // Prevent event bubbling
+        event.stopPropagation();
         showLoading();
-        
+
         fetch(`/api/dependent/${dependentId}/payments/`)
             .then(response => response.json())
             .then(data => {
                 const tbody = document.getElementById('dependentPaymentHistoryBody');
                 document.getElementById('dependentPaymentModalTitle').textContent = `Payment History - ${dependentName}`;
                 tbody.innerHTML = '';
-                
-                data.forEach(payment => {
-                    tbody.innerHTML += `
-                        <tr class="hover:bg-[#e8eaf6]">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${payment.fund}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">R${payment.amount}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${payment.Fund_Date_Year}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${payment.Fund_Date_Month}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${payment.payment_date}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${payment.reciept_number}</td>
+
+                if (data.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+                                No payment history found
+                            </td>
                         </tr>
                     `;
-                });
-                
+                } else {
+                    data.forEach(payment => {
+                        tbody.innerHTML += `
+                            <tr class="hover:bg-[#e8eaf6]">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${payment.fund}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">R${payment.amount}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${payment.Fund_Date_Year}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${payment.Fund_Date_Month}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${payment.payment_date}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${payment.reciept_number}</td>
+                            </tr>
+                        `;
+                    });
+                }
+
                 document.getElementById('dependentPaymentHistoryModal').classList.remove('hidden');
             })
             .catch(error => {
@@ -545,18 +1075,17 @@
                 hideLoading();
             });
     }
-    
+
     function closeDependentPaymentModal() {
         document.getElementById('dependentPaymentHistoryModal').classList.add('hidden');
     }
-    
-    // Update the window.onclick event handler to include the new modal
+    // Close modals when clicking outside
     window.onclick = function(event) {
         const memberModal = document.getElementById('memberDetailModal');
         const paymentModal = document.getElementById('paymentHistoryModal');
         const dependentsModal = document.getElementById('dependentsModal');
         const dependentPaymentModal = document.getElementById('dependentPaymentHistoryModal');
-        
+
         if (event.target === memberModal) {
             memberModal.classList.add('hidden');
         }
@@ -570,24 +1099,18 @@
             dependentPaymentModal.classList.add('hidden');
         }
     }
-    
-    
-    // Close modals when clicking outside
-    window.onclick = function(event) {
-        const memberModal = document.getElementById('memberDetailModal');
-        const paymentModal = document.getElementById('paymentHistoryModal');
-        const dependentsModal = document.getElementById('dependentsModal');
-        
-        if (event.target === memberModal) {
-            memberModal.classList.add('hidden');
-        }
-        if (event.target === paymentModal) {
-            paymentModal.classList.add('hidden');
-        }
-        if (event.target === dependentsModal) {
-            dependentsModal.classList.add('hidden');
-        }
-    }
-</script>
 
+    // Keyboard navigation for pagination
+    document.addEventListener('keydown', function(event) {
+        if (event.target.tagName === 'INPUT') return;
+
+        const totalPages = Math.ceil(filteredMembers.length / itemsPerPage);
+
+        if (event.key === 'ArrowLeft' && currentPage > 1) {
+            changePage(currentPage - 1);
+        } else if (event.key === 'ArrowRight' && currentPage < totalPages) {
+            changePage(currentPage + 1);
+        }
+    });
+</script>
 {% endblock %}
