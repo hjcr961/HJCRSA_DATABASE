@@ -149,7 +149,7 @@ def upload_picture(request):
                 img.thumbnail(max_size, Image.Resampling.LANCZOS)
 
                 buffer = BytesIO()
-                img.save(buffer, format='JPEG', quality=10, optimize=True)
+                img.save(buffer, format='JPEG', quality=70, optimize=True)
                 compressed_image = buffer.getvalue()
 
                 if len(compressed_image) > 65000:
