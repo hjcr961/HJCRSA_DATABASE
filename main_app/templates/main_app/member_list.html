@@ -387,58 +387,58 @@
                 </button>
             </div>
 
-            <!-- Modal Content -->
-            <div class="p-8">
-                <!-- Profile Image Section -->
-                <div class="flex flex-col items-center mb-8">
-                    <div class="relative">
-                        <img id="modalMemberPicture" class="h-32 w-32 rounded-full object-cover ring-4 ring-[#1a237e] ring-offset-4" alt="Member Picture">
-                        <div class="absolute bottom-0 right-0 bg-green-500 w-6 h-6 rounded-full border-4 border-white"></div>
-                    </div>
+            <!-- Modal Content --><!-- Modal Content -->
+<div class="p-8">
+    <!-- Profile and Details Layout -->
+    <div class="flex flex-col lg:flex-row gap-8">
+        <!-- Profile Image Section - Left Side -->
+        <div class="flex-shrink-0 lg:w-80">
+            <div class="relative mb-6">
+                <img id="modalMemberPicture" class="h-48 w-48 md:h-56 md:w-56 rounded-2xl object-cover ring-4 ring-[#1a237e] ring-offset-4 mx-auto lg:mx-0" alt="Member Picture">
+                <div class="absolute bottom-2 right-2 bg-green-500 w-6 h-6 rounded-full border-4 border-white"></div>
+            </div>
+        </div>
+        
+        <!-- Details Section - Right Side -->
+        <div class="flex-1">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-gray-50 p-3 rounded-lg">
+                    <label class="text-xs font-semibold text-gray-500 uppercase">Card Number</label>
+                    <p id="modalCardNumber" class="mt-1 text-sm font-medium text-gray-900"></p>
                 </div>
-
-                <!-- Details Grid -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div class="space-y-6">
-                        <!-- Left Column -->
-                        <div class="bg-gray-50 p-4 rounded-lg">
-                            <label class="text-xs font-semibold text-gray-500 uppercase">Card Number</label>
-                            <p id="modalCardNumber" class="mt-1 text-sm font-medium text-gray-900"></p>
-                        </div>
-                        <div class="bg-gray-50 p-4 rounded-lg">
-                            <label class="text-xs font-semibold text-gray-500 uppercase">Name</label>
-                            <p id="modalName" class="mt-1 text-sm font-medium text-gray-900"></p>
-                        </div>
-                        <div class="bg-gray-50 p-4 rounded-lg">
-                            <label class="text-xs font-semibold text-gray-500 uppercase">Branch</label>
-                            <p id="modalBranch" class="mt-1 text-sm font-medium text-gray-900"></p>
-                        </div>
-                        <div class="bg-gray-50 p-4 rounded-lg">
-                            <label class="text-xs font-semibold text-gray-500 uppercase">Church Title</label>
-                            <p id="modalChurchTitle" class="mt-1 text-sm font-medium text-gray-900"></p>
-                        </div>
-                    </div>
-
-                    <div class="space-y-6">
-                        <!-- Right Column -->
-                        <div class="bg-gray-50 p-4 rounded-lg">
-                            <label class="text-xs font-semibold text-gray-500 uppercase">Gender</label>
-                            <p id="modalGender" class="mt-1 text-sm font-medium text-gray-900"></p>
-                        </div>
-                        <div class="bg-gray-50 p-4 rounded-lg">
-                            <label class="text-xs font-semibold text-gray-500 uppercase">Phone</label>
-                            <p id="modalPhone" class="mt-1 text-sm font-medium text-gray-900"></p>
-                        </div>
-                        <div class="bg-gray-50 p-4 rounded-lg">
-                            <label class="text-xs font-semibold text-gray-500 uppercase">Address</label>
-                            <p id="modalAddress" class="mt-1 text-sm font-medium text-gray-900"></p>
-                        </div>
-                    </div>
+                <div class="bg-gray-50 p-3 rounded-lg">
+                    <label class="text-xs font-semibold text-gray-500 uppercase">Name</label>
+                    <p id="modalName" class="mt-1 text-sm font-medium text-gray-900"></p>
+                </div>
+                <div class="bg-gray-50 p-3 rounded-lg">
+                    <label class="text-xs font-semibold text-gray-500 uppercase">Branch</label>
+                    <p id="modalBranch" class="mt-1 text-sm font-medium text-gray-900"></p>
+                </div>
+                <div class="bg-gray-50 p-3 rounded-lg">
+                    <label class="text-xs font-semibold text-gray-500 uppercase">Church Title</label>
+                    <p id="modalChurchTitle" class="mt-1 text-sm font-medium text-gray-900"></p>
+                </div>
+                <div class="bg-gray-50 p-3 rounded-lg">
+                    <label class="text-xs font-semibold text-gray-500 uppercase">Gender</label>
+                    <p id="modalGender" class="mt-1 text-sm font-medium text-gray-900"></p>
+                </div>
+                <div class="bg-gray-50 p-3 rounded-lg">
+                    <label class="text-xs font-semibold text-gray-500 uppercase">Phone</label>
+                    <p id="modalPhone" class="mt-1 text-sm font-medium text-gray-900"></p>
+                </div>
+                <div class="bg-gray-50 p-3 rounded-lg md:col-span-2">
+                    <label class="text-xs font-semibold text-gray-500 uppercase">Address</label>
+                    <p id="modalAddress" class="mt-1 text-sm font-medium text-gray-900"></p>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+        </div>
+    </div>
+</div>
+
 
 <!-- Payment History Modal -->
 <div id="paymentHistoryModal" tabindex="-1" aria-hidden="true" class="fixed top-0 left-0 right-0 z-50 hidden w-full p-4 overflow-x-hidden overflow-y-auto md:inset-0 h-[calc(100%-1rem)] max-h-full bg-black bg-opacity-50">
