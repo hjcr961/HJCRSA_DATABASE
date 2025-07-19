@@ -341,14 +341,15 @@ def add_treasury_dep(request):
             return redirect('treasury_dep_list')
     else:
         form = TreasuryDepForm()
-    return render(request, 'main_app/add_treasury_dep.html', {'form': form})
 
-def validate_card_number(request):
-    card_number = request.GET.get('card_number', None)
-    data = {
-        'exists': MainMembers.objects.filter(card_number=card_number).exists()
-    }
-    return JsonResponse(data)
+    # Add this line to provide years
+    years = list(range(2020, 2031))
+
+    return render(request, 'main_app/add_treasury_dep.html', {
+        'form': form,
+        'years': years
+    })
+
 
 # List views
 
@@ -626,17 +627,6 @@ def add_treasury(request):
     })
 
 
-@permission_required('main_app.add_treasurydep', raise_exception=True)
-def add_treasury_dep(request):
-    if request.method == 'POST':
-        form = TreasuryDepForm(request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'Treasury dependent record added successfully!')
-            return redirect('treasury_dep_list')
-    else:
-        form = TreasuryDepForm()
-    return render(request, 'main_app/add_treasury_dep.html', {'form': form})
 
 
 def validate_card_number(request):

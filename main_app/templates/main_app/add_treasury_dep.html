@@ -59,7 +59,7 @@
                             {% elif field.name == 'fund_date_year' or field.name == 'year' or field.name == 'fund_year' %}
                                 <select name="{{ field.name }}" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-700">
                                     <option value="">Select Year</option>
-                                    {% for year in "2020,2021,2022,2023,2024,2025,2026,2027,2028,2029,2030"|split:"," %}
+                                    {% for year in years %}
                                         <option value="{{ year }}">{{ year }}</option>
                                     {% endfor %}
                                 </select>
