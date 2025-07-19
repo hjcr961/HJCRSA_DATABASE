@@ -54,6 +54,7 @@ from django.shortcuts import render
 from django.db import connection
 from django.http import HttpResponse
 import openpyxl
+from django.db.models import Count, Q, Sum
 
 def fund_report(request):
     # Get fund types for dropdown
@@ -352,47 +353,42 @@ def validate_card_number(request):
 # List views
 
 
-
 def member_list(request):
-    # Fetch members ordered by surname and name
-    members = MainMembers.objects.order_by('surname', 'name')
-    
-    # Fetch dependents
+    # Fetch dependents first (since we still need this separately)
     dependents = Dependents.objects.order_by('surname', 'name')
 
-    # Fetch pictures using raw SQL (since Member_Pictures is not a Django model)
+    # Fetch all member data using the MemberFullDetails view
     with connection.cursor() as cursor:
+        # Get member details and pictures in one query
         cursor.execute("""
-            SELECT Branch_Member_Number, picture_data 
-            FROM Member_Pictures
-        """)
-        pictures = dict(cursor.fetchall())
+                       SELECT mf.*,
+                              (SELECT COUNT(*)
+                               FROM Dependents d
+                               WHERE d.Card_Number = mf.card_number) as dependent_count
+                       FROM MemberFullDetails mf
+                       ORDER BY mf.surname, mf.name
+                       """)
 
-        # Fetch dependent counts using raw SQL
-        cursor.execute("""
-            SELECT Card_Number, COUNT(*) as dependent_count
-            FROM Dependents
-            GROUP BY Card_Number
-        """)
-        dependent_counts = dict(cursor.fetchall())
+        columns = [col[0] for col in cursor.description]
+        members_data = []
 
-    # Enrich member data
-    for member in members:
-        # Add picture URL
-        picture_data = pictures.get(member.branch_member_number)
-        member.picture_url = (
-            f"data:image/jpeg;base64,{b64encode(picture_data).decode()}"
-            if picture_data
-            else '/static/default-profile.jpg'
-        )
+        for row in cursor.fetchall():
+            member_dict = dict(zip(columns, row))
 
-        # Add dependent count
-        member.dependent_count = dependent_counts.get(member.card_number, 0)
+            # Format the picture URL
+            picture_data = member_dict.get('picture_data')
+            member_dict['picture_url'] = (
+                f"data:image/jpeg;base64,{b64encode(picture_data).decode()}"
+                if picture_data
+                else '/static/default-profile.jpg'
+            )
 
-    # Render the template
+            members_data.append(member_dict)
+
+    # Render the template with both members and dependents
     return render(request, 'main_app/member_list.html', {
-        'members': members,
-        'dependents': dependents,  # Add dependents to the context
+        'members': members_data,
+        'dependents': dependents,
     })
 
 
@@ -741,16 +737,39 @@ def home_view(request):
     total_annual_value = annual_payments.aggregate(Sum('amount'))['amount__sum'] or 0
     total_annual_count = annual_payments.count()
     
+    # Calculate gender distribution using separate queries
+    male_count = MainMembers.objects.filter(gender='M').count()
+    female_count = MainMembers.objects.filter(gender='F').count()
+    other_count = total_members - male_count - female_count  # This includes null and other values
+    
+    # Calculate percentages
+    if total_members > 0:
+        male_percentage = round((male_count / total_members) * 100)
+        female_percentage = round((female_count / total_members) * 100)
+        other_percentage = 100 - male_percentage - female_percentage  # Ensure it adds up to 100%
+    else:
+        male_percentage = female_percentage = other_percentage = 0
+    
     # Pass the data to the template
     context = {
         'total_members': total_members,
         'total_dependents': total_dependents,
         'total_annual_value': total_annual_value,
         'total_annual_count': total_annual_count,
-        'current_year': current_year,  # Add this line
+        'current_year': current_year,
+        # Add gender distribution data
+        'gender_distribution': {
+            'male_count': male_count,
+            'female_count': female_count,
+            'other_count': other_count,
+            'male_percentage': male_percentage,
+            'female_percentage': female_percentage,
+            'other_percentage': other_percentage,
+        }
     }
     
     return render(request, 'main_app/home.html', context)
+
 
 @login_required
 def get_dependent_payments(request, card_number):
@@ -944,16 +963,24 @@ def barcode_lookup(request):
     except Elders.DoesNotExist:
         return JsonResponse({'error': 'Barcode not found'}, status=404)
 
+
 def member_details_api(request, card_number):
     try:
-        # Use raw SQL to match the rest of your codebase
         with connection.cursor() as cursor:
             cursor.execute("""
-                SELECT mm.card_number, mm.name, mm.surname, mm.branch, mm.gender, 
-                       mm.phone_number, mm.address, mm.branch_member_number, mm.church_title
-                FROM Main_Members mm
-                WHERE mm.card_number = %s
-            """, [card_number])
+                           SELECT card_number,
+                                  name,
+                                  surname,
+                                  branch,
+                                  gender,
+                                  phone_number,
+                                  address,
+                                  branch_member_number,
+                                  church_title,
+                                  picture_data
+                           FROM MemberFullDetails
+                           WHERE card_number = %s
+                           """, [card_number])
 
             columns = [col[0] for col in cursor.description]
             result = cursor.fetchone()
@@ -963,25 +990,19 @@ def member_details_api(request, card_number):
 
             member_data = dict(zip(columns, result))
 
-            # Get picture data
-            cursor.execute("""
-                SELECT picture_data 
-                FROM Member_Pictures
-                WHERE Branch_Member_Number = %s
-            """, [member_data.get('branch_member_number')])
-
-            picture_row = cursor.fetchone()
-
-            if picture_row and picture_row[0]:
-                member_data['picture_url'] = f"data:image/jpeg;base64,{b64encode(picture_row[0]).decode()}"
+            # Handle picture URL formatting exactly as before
+            if member_data.get('picture_data'):
+                member_data['picture_url'] = f"data:image/jpeg;base64,{b64encode(member_data['picture_data']).decode()}"
             else:
                 member_data['picture_url'] = '/static/default-profile.jpg'
+
+            # Remove picture_data from response to match original API response
+            member_data.pop('picture_data', None)
 
             return JsonResponse(member_data)
 
     except Exception as e:
         print(f"Error in member_details_api: {e}")
         return JsonResponse({'error': str(e)}, status=500)
-    
     
     
