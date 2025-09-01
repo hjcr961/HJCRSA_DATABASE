@@ -56,13 +56,6 @@
                                     <option value="Blessing">Blessing</option>
                                     <option value="Baptismal">Baptismal</option>
                                 </select>
-                            {% elif field.name == 'fund_date_year' or field.name == 'year' or field.name == 'fund_year' %}
-                                <select name="{{ field.name }}" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-700">
-                                    <option value="">Select Year</option>
-                                    {% for year in years %}
-                                        <option value="{{ year }}">{{ year }}</option>
-                                    {% endfor %}
-                                </select>
                             {% elif field.name == 'dependent_id' %}
                                 <div class="flex space-x-2">
                                     <input type="number" name="dependent_id" required id="id_dependent_id" 

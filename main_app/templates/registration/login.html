@@ -7,7 +7,6 @@
     <title>HJCRSA - Sign In</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
             theme: {
@@ -27,48 +26,16 @@
         }
     </script>
     <style>
-        /* Cache buster - v3.1 */
-        * {
-            box-sizing: border-box;
-        }
-
+        /* Cache buster - v2.1 */
         body {
-            background: #ffffff;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            min-height: 100vh;
-            position: relative;
-            overflow-x: hidden;
-        }
-
-        /* Subtle background pattern */
-        body::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: 
-                radial-gradient(circle at 20% 80%, rgba(59, 130, 246, 0.03) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.03) 0%, transparent 50%),
-                radial-gradient(circle at 40% 40%, rgba(59, 130, 246, 0.02) 0%, transparent 50%);
-            animation: float 20s ease-in-out infinite;
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0px) rotate(0deg); }
-            33% { transform: translateY(-10px) rotate(0.5deg); }
-            66% { transform: translateY(5px) rotate(-0.5deg); }
         }
 
         .glass-effect {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(20px);
-            border: 1px solid rgba(0, 0, 0, 0.05);
-            box-shadow: 
-                0 25px 50px rgba(0, 0, 0, 0.08),
-                0 0 0 1px rgba(255, 255, 255, 0.8),
-                inset 0 1px 0 rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
         .input-group {
@@ -78,93 +45,64 @@
 
         .input-field {
             width: 100%;
-            padding: 1.25rem 1.25rem 1.25rem 3.5rem;
+            padding: 1rem 1rem 1rem 3rem;
             border: 2px solid #e5e7eb;
-            border-radius: 16px;
+            border-radius: 12px;
             font-size: 1rem;
-            font-weight: 400;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             background: #ffffff;
-            color: #1f2937;
-        }
-
-        .input-field::placeholder {
-            color: #9ca3af;
-            font-weight: 400;
         }
 
         .input-field:focus {
             outline: none;
             border-color: #3b82f6;
-            background: #ffffff;
-            box-shadow: 
-                0 0 0 4px rgba(59, 130, 246, 0.1),
-                0 10px 25px rgba(59, 130, 246, 0.08);
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
             transform: translateY(-2px);
         }
 
         .input-icon {
             position: absolute;
-            left: 1.25rem;
+            left: 1rem;
             top: 50%;
             transform: translateY(-50%);
-            color: #9ca3af;
-            font-size: 1.1rem;
-            transition: all 0.3s ease;
-            z-index: 10;
+            color: #6b7280;
+            transition: color 0.3s ease;
         }
 
         .input-field:focus + .input-icon {
             color: #3b82f6;
-            transform: translateY(-50%) scale(1.1);
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
             border: none;
-            padding: 1.25rem 2rem;
-            border-radius: 16px;
+            padding: 1rem 2rem;
+            border-radius: 12px;
             color: white;
             font-weight: 600;
             font-size: 1rem;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
             overflow: hidden;
-            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.25);
-        }
-
-        .btn-primary::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-            transition: left 0.5s;
-        }
-
-        .btn-primary:hover::before {
-            left: 100%;
         }
 
         .btn-primary:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 15px 35px rgba(59, 130, 246, 0.35);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
         }
 
         .btn-primary:active {
-            transform: translateY(-1px);
+            transform: translateY(0);
         }
 
         .fade-in {
-            animation: fadeInUp 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         @keyframes fadeInUp {
             from {
                 opacity: 0;
-                transform: translateY(40px);
+                transform: translateY(30px);
             }
             to {
                 opacity: 1;
@@ -174,7 +112,7 @@
 
         .logo-container {
             position: relative;
-            margin-bottom: 3rem;
+            margin-bottom: 2.5rem;
         }
 
         .logo-bg {
@@ -182,63 +120,39 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 200px;
-            height: 200px;
-            background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(139, 92, 246, 0.03));
+            width: 180px !important;
+            height: 180px !important;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
             border-radius: 50%;
-            animation: pulse 4s ease-in-out infinite;
+            opacity: 0.1;
         }
 
-        @keyframes pulse {
-            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
-            50% { transform: translate(-50%, -50%) scale(1.05); opacity: 0.7; }
-        }
-
+        /* UPDATED LOGO SIZE - NOW 130px */
         .logo-image {
-            width: 120px !important;
-            height: 120px !important;
+            width: 130px !important;
+            height: 130px !important;
             object-fit: contain;
-            border-radius: 24px;
-            box-shadow: 
-                0 20px 40px rgba(0, 0, 0, 0.1),
-                0 0 0 1px rgba(0, 0, 0, 0.05);
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 20px;
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.18);
+            transition: transform 0.3s ease;
             display: block;
             margin: 0 auto;
-            position: relative;
-            z-index: 10;
         }
 
         .logo-image:hover {
-            transform: scale(1.05) rotate(2deg);
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
-        }
-
-        .welcome-text {
-            background: linear-gradient(135deg, #1f2937, #4b5563);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            font-weight: 700;
-            letter-spacing: -0.025em;
-        }
-
-        .subtitle-text {
-            color: #6b7280;
-            font-weight: 400;
+            transform: scale(1.05);
         }
 
         .error-alert {
-            background: linear-gradient(135deg, #fef2f2, #fee2e2);
-            border: 1px solid #fca5a5;
+            background: linear-gradient(135deg, #fee2e2, #fecaca);
+            border: 1px solid #f87171;
             color: #dc2626;
-            padding: 1rem 1.25rem;
-            border-radius: 16px;
+            padding: 1rem;
+            border-radius: 12px;
             margin-bottom: 1.5rem;
             display: flex;
             align-items: center;
             gap: 0.75rem;
-            box-shadow: 0 10px 25px rgba(220, 38, 38, 0.1);
         }
 
         .checkbox-custom {
@@ -246,17 +160,15 @@
             width: 1.25rem;
             height: 1.25rem;
             border: 2px solid #d1d5db;
-            border-radius: 6px;
+            border-radius: 4px;
             position: relative;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            background: #ffffff;
+            transition: all 0.3s ease;
         }
 
         .checkbox-custom:checked {
-            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            background: #3b82f6;
             border-color: #3b82f6;
-            transform: scale(1.05);
         }
 
         .checkbox-custom:checked::after {
@@ -269,121 +181,11 @@
             font-size: 0.875rem;
             font-weight: bold;
         }
-
-        .link-modern {
-            color: #3b82f6;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            position: relative;
-        }
-
-        .link-modern::after {
-            content: '';
-            position: absolute;
-            width: 0;
-            height: 2px;
-            bottom: -2px;
-            left: 0;
-            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-            transition: width 0.3s ease;
-        }
-
-        .link-modern:hover::after {
-            width: 100%;
-        }
-
-        .link-modern:hover {
-            color: #1d4ed8;
-            transform: translateY(-1px);
-        }
-
-        .divider-modern {
-            position: relative;
-            margin: 2rem 0;
-            text-align: center;
-        }
-
-        .divider-modern::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, #e5e7eb, transparent);
-        }
-
-        .divider-text {
-            background: #ffffff;
-            padding: 0 1.5rem;
-            color: #6b7280;
-            font-size: 0.875rem;
-            font-weight: 500;
-            display: inline-block;
-        }
-
-        .footer-text {
-            color: #6b7280;
-            font-size: 0.875rem;
-            font-weight: 400;
-        }
-
-        /* Responsive improvements */
-        @media (max-width: 640px) {
-            .glass-effect {
-                margin: 1rem;
-                padding: 2rem 1.5rem;
-            }
-            
-            .logo-image {
-                width: 100px !important;
-                height: 100px !important;
-            }
-            
-            .welcome-text {
-                font-size: 1.75rem;
-            }
-        }
-
-        /* Loading state */
-        .btn-loading {
-            pointer-events: none;
-            opacity: 0.8;
-        }
-
-        .btn-loading::before {
-            display: none;
-        }
-
-        /* Additional white theme enhancements */
-        .input-field:hover {
-            border-color: #d1d5db;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-        }
-
-        .glass-effect:hover {
-            box-shadow: 
-                0 32px 64px rgba(0, 0, 0, 0.1),
-                0 0 0 1px rgba(255, 255, 255, 0.9),
-                inset 0 1px 0 rgba(255, 255, 255, 0.95);
-        }
-
-        /* Subtle accent colors for white theme */
-        .checkbox-custom:hover {
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-        }
-
-        .remember-text {
-            color: #374151;
-            font-weight: 500;
-        }
     </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-4">
-    <div class="w-full max-w-md relative z-10">
-        <div class="glass-effect rounded-3xl shadow-2xl p-8 fade-in">
+    <div class="w-full max-w-md">
+        <div class="glass-effect rounded-2xl shadow-2xl p-8 fade-in">
             <!-- Logo Section -->
             <div class="logo-container text-center">
                 <div class="logo-bg"></div>
@@ -391,9 +193,9 @@
                     <img src="{% static 'main_app/images/logo.png' %}"
                          class="logo-image mb-6"
                          alt="HJCRSA Logo"
-                         style="width: 120px; height: 120px;" />
-                    <h1 class="text-3xl welcome-text mb-3">Welcome Back</h1>
-                    <p class="subtitle-text text-sm mb-2">Sign in to your HJCRSA account</p>
+                         style="width: 130px; height: 130px;" />
+                    <h1 class="text-3xl font-bold text-gray-900 mb-2">Welcome Back</h1>
+                    <p class="text-gray-600 text-sm">Sign in to your HJCRSA account</p>
                 </div>
             </div>
 
@@ -443,16 +245,16 @@
                 <div class="flex items-center justify-between text-sm">
                     <label class="flex items-center gap-3 cursor-pointer">
                         <input type="checkbox" name="remember-me" class="checkbox-custom">
-                        <span class="remember-text">Remember me</span>
+                        <span class="text-gray-700">Remember me</span>
                     </label>
-                    <a href="#" class="link-modern">
+                    <a href="#" class="text-primary-600 hover:text-primary-700 font-medium transition-colors">
                         Forgot password?
                     </a>
                 </div>
 
                 <!-- Sign In Button -->
                 <button type="submit" class="btn-primary w-full">
-                    <span class="flex items-center justify-center gap-2 relative z-10">
+                    <span class="flex items-center justify-center gap-2">
                         <i class="fas fa-sign-in-alt"></i>
                         Sign In
                     </span>
@@ -460,14 +262,19 @@
             </form>
 
             <!-- Divider -->
-            <div class="divider-modern">
-                <span class="divider-text">New to HJCRSA?</span>
+            <div class="relative my-8">
+                <div class="absolute inset-0 flex items-center">
+                    <div class="w-full border-t border-gray-200"></div>
+                </div>
+                <div class="relative flex justify-center text-sm">
+                    <span class="px-4 bg-white text-gray-500">New to HJCRSA?</span>
+                </div>
             </div>
 
             <!-- Sign Up Link -->
             <div class="text-center">
                 <a href="{% url 'signup' %}"
-                   class="inline-flex items-center gap-2 link-modern font-medium">
+                   class="inline-flex items-center gap-2 text-primary-600 hover:text-primary-700 font-medium transition-colors">
                     <i class="fas fa-user-plus"></i>
                     Create an account
                 </a>
@@ -476,223 +283,34 @@
 
         <!-- Footer -->
         <div class="text-center mt-8">
-            <p class="footer-text">
+            <p class="text-white/80 text-sm">
                 © 2024 HJCRSA. All rights reserved.
             </p>
         </div>
     </div>
 
     <script>
-        // Enhanced smooth interactions
+        // Add smooth interactions
         document.addEventListener('DOMContentLoaded', function() {
             const inputs = document.querySelectorAll('.input-field');
-            const form = document.querySelector('form');
-            const submitButton = form.querySelector('button[type="submit"]');
 
-            // Enhanced input interactions
             inputs.forEach(input => {
                 input.addEventListener('focus', function() {
                     this.parentElement.classList.add('focused');
-                    
-                    // Add subtle animation to icon
-                    const icon = this.nextElementSibling;
-                    if (icon) {
-                        icon.style.transform = 'translateY(-50%) scale(1.1)';
-                    }
                 });
 
                 input.addEventListener('blur', function() {
                     this.parentElement.classList.remove('focused');
-                    
-                    // Reset icon animation
-                    const icon = this.nextElementSibling;
-                    if (icon) {
-                        icon.style.transform = 'translateY(-50%) scale(1)';
-                    }
-                });
-
-                // Add typing animation effect
-                input.addEventListener('input', function() {
-                    if (this.value.length > 0) {
-                        this.style.fontWeight = '500';
-                        this.style.color = '#111827';
-                    } else {
-                        this.style.fontWeight = '400';
-                        this.style.color = '#1f2937';
-                    }
                 });
             });
 
-            // Enhanced form submission with loading state
+            // Form validation feedback
+            const form = document.querySelector('form');
             form.addEventListener('submit', function(e) {
-                submitButton.classList.add('btn-loading');
-                submitButton.innerHTML = `
-                    <span class="flex items-center justify-center gap-2 relative z-10">
-                        <i class="fas fa-spinner fa-spin"></i>
-                        Signing in...
-                    </span>
-                `;
-                submitButton.disabled = true;
-
-                // Add subtle shake animation for any validation errors
-                setTimeout(() => {
-                    if (document.querySelector('.error-alert')) {
-                        submitButton.classList.remove('btn-loading');
-                        submitButton.innerHTML = `
-                            <span class="flex items-center justify-center gap-2 relative z-10">
-                                <i class="fas fa-sign-in-alt"></i>
-                                Sign In
-                            </span>
-                        `;
-                        submitButton.disabled = false;
-                    }
-                }, 100);
+                const button = form.querySelector('button[type="submit"]');
+                button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Signing in...';
+                button.disabled = true;
             });
-
-            // Add hover effects to interactive elements
-            const interactiveElements = document.querySelectorAll('.link-modern, .checkbox-custom');
-            
-            interactiveElements.forEach(element => {
-                element.addEventListener('mouseenter', function() {
-                    if (!this.classList.contains('checkbox-custom')) {
-                        this.style.transform = 'translateY(-1px)';
-                    }
-                });
-                
-                element.addEventListener('mouseleave', function() {
-                    if (!this.classList.contains('checkbox-custom')) {
-                        this.style.transform = 'translateY(0)';
-                    }
-                });
-            });
-
-            // Add subtle parallax effect to background elements
-            let ticking = false;
-            
-            function updateParallax() {
-                const scrolled = window.pageYOffset;
-                const parallaxElement = document.querySelector('body::before');
-                
-                if (parallaxElement) {
-                    const yPos = -(scrolled * 0.3);
-                    document.body.style.setProperty('--parallax-y', `${yPos}px`);
-                }
-                
-                ticking = false;
-            }
-
-            function requestTick() {
-                if (!ticking) {
-                    requestAnimationFrame(updateParallax);
-                    ticking = true;
-                }
-            }
-
-            window.addEventListener('scroll', requestTick);
-
-            // Add entrance animation delay for form elements
-            const formElements = document.querySelectorAll('.input-group, .btn-primary, .divider-modern');
-            formElements.forEach((element, index) => {
-                element.style.opacity = '0';
-                element.style.transform = 'translateY(20px)';
-                
-                setTimeout(() => {
-                    element.style.transition = 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
-                    element.style.opacity = '1';
-                    element.style.transform = 'translateY(0)';
-                }, 200 + (index * 100));
-            });
-
-            // Add focus trap for accessibility
-            const focusableElements = form.querySelectorAll(
-                'input, button, a, [tabindex]:not([tabindex="-1"])'
-            );
-            const firstFocusable = focusableElements[0];
-            const lastFocusable = focusableElements[focusableElements.length - 1];
-
-            form.addEventListener('keydown', function(e) {
-                if (e.key === 'Tab') {
-                    if (e.shiftKey) {
-                        if (document.activeElement === firstFocusable) {
-                            lastFocusable.focus();
-                            e.preventDefault();
-                        }
-                    } else {
-                        if (document.activeElement === lastFocusable) {
-                            firstFocusable.focus();
-                            e.preventDefault();
-                        }
-                    }
-                }
-            });
-
-            // Auto-focus first input after page load
-            setTimeout(() => {
-                document.getElementById('username').focus();
-            }, 800);
-
-            // Add subtle card hover effect
-            const card = document.querySelector('.glass-effect');
-            card.addEventListener('mouseenter', function() {
-                this.style.transform = 'translateY(-5px)';
-            });
-
-            card.addEventListener('mouseleave', function() {
-                this.style.transform = 'translateY(0)';
-            });
-
-            // Enhanced checkbox interaction
-            const checkbox = document.querySelector('.checkbox-custom');
-            checkbox.addEventListener('change', function() {
-                if (this.checked) {
-                    this.style.transform = 'scale(1.1)';
-                    setTimeout(() => {
-                        this.style.transform = 'scale(1.05)';
-                    }, 150);
-                } else {
-                    this.style.transform = 'scale(1)';
-                }
-            });
-
-            // Add ripple effect to button
-            submitButton.addEventListener('click', function(e) {
-                const ripple = document.createElement('span');
-                const rect = this.getBoundingClientRect();
-                const size = Math.max(rect.width, rect.height);
-                const x = e.clientX - rect.left - size / 2;
-                const y = e.clientY - rect.top - size / 2;
-                
-                ripple.style.cssText = `
-                    position: absolute;
-                    width: ${size}px;
-                    height: ${size}px;
-                    left: ${x}px;
-                    top: ${y}px;
-                    background: rgba(255, 255, 255, 0.3);
-                    border-radius: 50%;
-                    transform: scale(0);
-                    animation: ripple 0.6s linear;
-                    pointer-events: none;
-                `;
-                
-                this.appendChild(ripple);
-                
-                setTimeout(() => {
-                    ripple.remove();
-                }, 600);
-            });
-
-            // Add CSS for ripple animation
-            const style = document.createElement('style');
-            style.textContent = `
-                @keyframes ripple {
-                    to {
-                        transform: scale(2);
-                        opacity: 0;
-                    }
-                }
-            `;
-            document.head.appendChild(style);
         });
     </script>
 </body>

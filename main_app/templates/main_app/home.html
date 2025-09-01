@@ -117,24 +117,16 @@
                     <p class="text-sm text-gray-500">Gender Distribution</p>
                     <div class="mt-2 h-12 flex items-center">
                         <div class="w-full bg-gray-200 rounded-full h-2.5">
-                            <div class="bg-blue-600 h-2.5 rounded-full" style="width: {{ gender_distribution.male_percentage }}%"></div>
+                            <div class="bg-blue-600 h-2.5 rounded-full" style="width: 55%"></div>
                         </div>
-                        <span class="ml-2 text-xs font-medium text-gray-700">{{ gender_distribution.male_percentage }}% M</span>
+                        <span class="ml-2 text-xs font-medium text-gray-700">55% M</span>
                     </div>
                     <div class="mt-2 h-12 flex items-center">
                         <div class="w-full bg-gray-200 rounded-full h-2.5">
-                            <div class="bg-pink-500 h-2.5 rounded-full" style="width: {{ gender_distribution.female_percentage }}%"></div>
+                            <div class="bg-pink-500 h-2.5 rounded-full" style="width: 40%"></div>
                         </div>
-                        <span class="ml-2 text-xs font-medium text-gray-700">{{ gender_distribution.female_percentage }}% F</span>
+                        <span class="ml-2 text-xs font-medium text-gray-700">40% F</span>
                     </div>
-                    {% if gender_distribution.other_percentage > 0 %}
-                    <div class="mt-2 h-12 flex items-center">
-                        <div class="w-full bg-gray-200 rounded-full h-2.5">
-                            <div class="bg-gray-500 h-2.5 rounded-full" style="width: {{ gender_distribution.other_percentage }}%"></div>
-                        </div>
-                        <span class="ml-2 text-xs font-medium text-gray-700">{{ gender_distribution.other_percentage }}% Other</span>
-                    </div>
-                    {% endif %}
                 </div>
             </div>
 
@@ -658,38 +650,33 @@
         });
         
         // Analytics tab charts
-            // Gender Distribution Chart
-const genderCtx = document.getElementById('genderDistributionChart').getContext('2d');
-new Chart(genderCtx, {
-    type: 'doughnut',
-    data: {
-        labels: ['Male', 'Female'{% if gender_distribution.other_percentage > 0 %}, 'Other'{% endif %}],
-        datasets: [{
-            data: [
-                {{ gender_distribution.male_percentage }}, 
-                {{ gender_distribution.female_percentage }}{% if gender_distribution.other_percentage > 0 %}, 
-                {{ gender_distribution.other_percentage }}{% endif %}
-            ],
-            backgroundColor: [
-                'rgba(59, 130, 246, 0.8)',
-                'rgba(236, 72, 153, 0.8)'{% if gender_distribution.other_percentage > 0 %},
-                'rgba(107, 114, 128, 0.8)'{% endif %}
-            ],
-            borderWidth: 0
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: {
-                position: 'bottom'
-            }
-        },
-        cutout: '65%'
-    }
-});
-
+        if (document.getElementById('genderDistributionChart')) {
+            const genderCtx = document.getElementById('genderDistributionChart').getContext('2d');
+            new Chart(genderCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Male', 'Female', 'Other'],
+                    datasets: [{
+                        data: [55, 40, 5],
+                        backgroundColor: [
+                            'rgba(59, 130, 246, 0.8)',
+                            'rgba(236, 72, 153, 0.8)',
+                            'rgba(107, 114, 128, 0.8)'
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    },
+                    cutout: '65%'
+                }
+            });
         }
         
         if (document.getElementById('ageDistributionChart')) {

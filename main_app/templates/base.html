@@ -1,4 +1,4 @@
-    <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -8,14 +8,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0/dist/chartjs-plugin-datalabels.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-CMEZW8Q2R2"></script>
-    <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', 'G-CMEZW8Q2R2');
-    </script>
     <script>
         tailwind.config = {
             theme: {
@@ -213,6 +205,7 @@
                     </div>
                     <div>
                         <span class="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">HJCRSA</span>
+                        <p class="text-xs text-gray-500">Management System</p>
                     </div>
                 </div>
             </div>
@@ -339,6 +332,7 @@
                     <span class="text-2xl font-bold bg-gradient-to-r from-[#1a237e] to-[#283593] bg-clip-text text-transparent">
                         Holy Jerusalem Church Of Repentance Of South Africa
                     </span>
+                    <p class="text-sm text-gray-500">Management & Information System</p>
                 </div>
                 <span class="text-xl font-bold bg-gradient-to-r from-[#1a237e] to-[#283593] bg-clip-text text-transparent md:hidden">HJCRSA</span>
             </a>
@@ -479,6 +473,5 @@
             });
         });
     </script>
-    {% block extra_js %}{% endblock %}
 </body>
 </html>
