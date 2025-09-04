@@ -22,14 +22,14 @@ function initializeMembers() {
     const memberCards = document.querySelectorAll('.member-card');
     allMembers = Array.from(memberCards).map(card => ({
         element: card,
-        cardNumber: card.dataset.cardNumber || '',
-        name: card.dataset.name || '',
-        branch: card.dataset.branch || '',
-        churchTitle: card.dataset.churchTitle || '',
-        phone: card.dataset.phone || '',
-        address: card.dataset.address || '',
+        cardNumber: (card.dataset.cardNumber || '').trim(),
+        name: (card.dataset.name || '').trim(),
+        branch: (card.dataset.branch || '').trim(),
+        churchTitle: (card.dataset.churchTitle || '').trim(),
+        phone: (card.dataset.phone || '').trim(),
+        address: (card.dataset.address || '').trim(),
         picture: card.dataset.picture || '',
-        branchNumber: card.dataset.branchNumber || ''
+        branchNumber: (card.dataset.branchNumber || '').trim()
     }));
     filteredMembers = [...allMembers];
 }
@@ -37,13 +37,17 @@ function initializeMembers() {
 function initializeEventListeners() {
     const searchInput = document.getElementById('table-search');
     const clearSearchBtn = document.getElementById('clearSearch');
+    const itemsPerPageEl = document.getElementById('itemsPerPage');
+    const branchFilterBtn = document.getElementById('branchFilterBtn');
+    const churchTitleFilterBtn = document.getElementById('churchTitleFilterBtn');
+    const clearFiltersBtn = document.getElementById('clearFilters');
 
-    searchInput.addEventListener('input', debounce(handleSearch, 300));
-    clearSearchBtn.addEventListener('click', clearSearch);
-    document.getElementById('itemsPerPage').addEventListener('change', handleItemsPerPageChange);
-    document.getElementById('branchFilterBtn').addEventListener('click', toggleDropdown);
-    document.getElementById('churchTitleFilterBtn').addEventListener('click', toggleDropdown);
-    document.getElementById('clearFilters').addEventListener('click', clearAllFilters);
+    if (searchInput) searchInput.addEventListener('input', debounce(handleSearch, 300));
+    if (clearSearchBtn) clearSearchBtn.addEventListener('click', clearSearch);
+    if (itemsPerPageEl) itemsPerPageEl.addEventListener('change', handleItemsPerPageChange);
+    if (branchFilterBtn) branchFilterBtn.addEventListener('click', toggleDropdown);
+    if (churchTitleFilterBtn) churchTitleFilterBtn.addEventListener('click', toggleDropdown);
+    if (clearFiltersBtn) clearFiltersBtn.addEventListener('click', clearAllFilters);
 
     document.addEventListener('click', function(event) {
         if (!event.target.closest('.filter-dropdown')) {
@@ -59,24 +63,38 @@ function initializeEventListeners() {
 }
 
 function populateChurchTitleFilter() {
-    const churchTitles = [...new Set(allMembers.map(member => member.churchTitle).filter(title => title))].sort();
     const churchTitleFilterContent = document.getElementById('churchTitleFilterContent');
-    const allOption = churchTitleFilterContent.querySelector('[data-church-title=""]');
+    if (!churchTitleFilterContent) return;
+
+    const churchTitles = [...new Set(allMembers.map(member => member.churchTitle).filter(title => title))]
+        .map(t => t.trim())
+        .filter(t => t.length)
+        .sort((a,b) => a.localeCompare(b));
+
+    const existingAll = churchTitleFilterContent.querySelector('[data-church-title=""]');
+    let allOptionClone;
+    if (existingAll) {
+        allOptionClone = existingAll.cloneNode(true); // clone to avoid losing ref/listeners on innerHTML wipe
+    } else {
+        allOptionClone = document.createElement('div');
+        allOptionClone.className = 'filter-option';
+        allOptionClone.setAttribute('data-church-title', '');
+        allOptionClone.textContent = 'All Titles';
+    }
+
     churchTitleFilterContent.innerHTML = '';
-    churchTitleFilterContent.appendChild(allOption);
+    churchTitleFilterContent.appendChild(allOptionClone);
 
     churchTitles.forEach(title => {
-        if (title) {
-            const option = document.createElement('div');
-            option.className = 'filter-option';
-            option.dataset.churchTitle = title;
-            option.textContent = title;
-            option.addEventListener('click', () => handleChurchTitleFilter(title));
-            churchTitleFilterContent.appendChild(option);
-        }
+        const option = document.createElement('div');
+        option.className = 'filter-option';
+        option.dataset.churchTitle = title;
+        option.textContent = title;
+        option.addEventListener('click', () => handleChurchTitleFilter(title));
+        churchTitleFilterContent.appendChild(option);
     });
 
-    allOption.addEventListener('click', () => handleChurchTitleFilter(''));
+    allOptionClone.addEventListener('click', () => handleChurchTitleFilter(''));
 }
 
 function handleChurchTitleFilter(churchTitle) {
@@ -88,24 +106,38 @@ function handleChurchTitleFilter(churchTitle) {
 }
 
 function populateBranchFilter() {
-    const branches = [...new Set(allMembers.map(member => member.branch))].sort();
     const branchFilterContent = document.getElementById('branchFilterContent');
-    const allOption = branchFilterContent.querySelector('[data-branch=""]');
+    if (!branchFilterContent) return;
+
+    const branches = [...new Set(allMembers.map(member => member.branch))]
+        .map(b => (b || '').trim())
+        .filter(b => b.length)
+        .sort((a,b) => a.localeCompare(b));
+
+    const existingAll = branchFilterContent.querySelector('[data-branch=""]');
+    let allOptionClone;
+    if (existingAll) {
+        allOptionClone = existingAll.cloneNode(true);
+    } else {
+        allOptionClone = document.createElement('div');
+        allOptionClone.className = 'filter-option';
+        allOptionClone.setAttribute('data-branch', '');
+        allOptionClone.textContent = 'All Branches';
+    }
+
     branchFilterContent.innerHTML = '';
-    branchFilterContent.appendChild(allOption);
+    branchFilterContent.appendChild(allOptionClone);
 
     branches.forEach(branch => {
-        if (branch) {
-            const option = document.createElement('div');
-            option.className = 'filter-option';
-            option.dataset.branch = branch;
-            option.textContent = branch;
-            option.addEventListener('click', () => handleBranchFilter(branch));
-            branchFilterContent.appendChild(option);
-        }
+        const option = document.createElement('div');
+        option.className = 'filter-option';
+        option.dataset.branch = branch;
+        option.textContent = branch;
+        option.addEventListener('click', () => handleBranchFilter(branch));
+        branchFilterContent.appendChild(option);
     });
 
-    allOption.addEventListener('click', () => handleBranchFilter(''));
+    allOptionClone.addEventListener('click', () => handleBranchFilter(''));
 }
 
 function debounce(func, wait) {
