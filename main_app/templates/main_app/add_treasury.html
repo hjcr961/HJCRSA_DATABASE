@@ -1,9 +1,14 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Add Treasury Record{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'main_app/css/add_treasury.css' %}">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+{% endblock %}
 {% block content %}
-<div class="min-h-screen bg-gradient-to-br from-blue-50 to-purple-100 py-10">
+<div class="add-treasury min-h-screen bg-gradient-to-br from-blue-50 to-purple-100 py-10">
     <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Header Section -->
         <div class="bg-white rounded-lg shadow-sm p-6 mb-6 flex items-center justify-between">
@@ -17,13 +22,13 @@
         </div>
 
         <!-- Loading Indicators -->
-        <div id="validating-indicator" class="hidden fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div id="validating-indicator" class="hidden fixed top-0 left-0 w-full h-full overlay-panel flex items-center justify-center z-50">
             <div class="bg-white p-6 rounded-lg shadow-xl flex items-center space-x-4">
                 <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                 <span class="text-lg font-semibold text-gray-700">Validating card number...</span>
             </div>
         </div>
-        <div id="saving-indicator" class="hidden fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div id="saving-indicator" class="hidden fixed top-0 left-0 w-full h-full overlay-panel flex items-center justify-center z-50">
             <div class="bg-white p-6 rounded-lg shadow-xl flex items-center space-x-4">
                 <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                 <span class="text-lg font-semibold text-gray-700">Saving treasury records...</span>
@@ -31,7 +36,7 @@
         </div>
 
         <!-- Main Form Card -->
-        <div class="bg-white rounded-2xl shadow-xl p-8 border border-blue-100">
+        <div class="bg-white rounded-2xl add-treasury-card p-8 border border-blue-100">
             <form method="post" class="space-y-8" id="treasury-form" action="{% url 'add_treasury' %}">
                 {% csrf_token %}
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
@@ -110,7 +115,7 @@
                 </button>
 
                 <!-- Summary Section -->
-                <div class="mt-8 bg-blue-50 p-4 rounded-lg border border-blue-100">
+                <div class="mt-8 bg-blue-50 p-4 rounded-lg summary-card border border-blue-100">
                     <h3 class="text-lg font-semibold text-blue-900 mb-2">Summary</h3>
                     <div id="funds-summary" class="space-y-2">
                         <div class="flex justify-between">
@@ -119,7 +124,7 @@
                         </div>
                         <div class="flex justify-between font-medium">
                             <span>Total Amount:</span>
-                            <span id="total-amount">$0.00</span>
+                            <span id="total-amount" class="total-amount">$0.00</span>
                         </div>
                     </div>
                 </div>
@@ -131,147 +136,11 @@
                 </div>
             </form>
         </div>
-    </div>
+</div>
 </div>
 
-<!-- Include Flatpickr -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+{% endblock %}
+{% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    flatpickr("#payment_date", {
-        dateFormat: "Y-m-d",
-        defaultDate: "today"
-    });
-
-    document.getElementById('id_idmain_member').addEventListener('blur', validateCardNumber);
-    document.getElementById('treasury-form').addEventListener('submit', handleFormSubmit);
-    document.getElementById('add-fund').addEventListener('click', addNewFund);
-    initializeRemoveButtons();
-    updateSummary();
-
-    document.addEventListener('input', function(e) {
-        if (e.target.classList.contains('fund-amount')) {
-            updateSummary();
-        }
-    });
-});
-
-function validateCardNumber() {
-    const cardNumber = this.value.trim();
-    const indicator = document.getElementById('validating-indicator');
-
-    if (!cardNumber) return;
-
-    indicator.classList.remove('hidden');
-
-    fetch(`/validate-card-number/?card_number=${cardNumber}`)
-        .then(response => response.json())
-        .then(data => {
-            indicator.classList.add('hidden');
-            if (!data.exists) {
-                alert('Invalid card number. Please enter a valid member card number.');
-                this.value = '';
-                this.focus();
-            }
-        })
-        .catch(error => {
-            indicator.classList.add('hidden');
-            console.error('Validation error:', error);
-        });
-}
-
-function handleFormSubmit(e) {
-    e.preventDefault();
-    const savingIndicator = document.getElementById('saving-indicator');
-    savingIndicator.classList.remove('hidden');
-
-    const formData = new FormData(this);
-    const fundEntries = document.querySelectorAll('.fund-entry');
-
-    // Clear any existing arrays
-    formData.delete('fund[]');
-    formData.delete('fund_date_year[]');
-    formData.delete('amount[]');
-    formData.delete('receipt_number[]');
-
-    fundEntries.forEach((entry, index) => {
-        formData.append('fund[]', entry.querySelector('.fund-type').value);
-        const selectedYears = Array.from(entry.querySelector('.fund-years').selectedOptions)
-            .map(opt => opt.value);
-        formData.append('fund_date_year[]', JSON.stringify(selectedYears));
-        formData.append('amount[]', entry.querySelector('.fund-amount').value);
-        formData.append('receipt_number[]', entry.querySelector('.fund-receipt').value);
-    });
-
-    fetch(this.action, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-        },
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            window.location.href = data.redirect_url;
-        } else {
-            throw new Error(data.error || 'Failed to save record');
-        }
-    })
-    .catch(error => {
-        console.error('Submission error:', error);
-        alert('Error saving record: ' + error.message);
-    })
-    .finally(() => {
-        savingIndicator.classList.add('hidden');
-    });
-}
-
-function addNewFund() {
-    const container = document.getElementById('funds-container');
-    const template = container.querySelector('.fund-entry').cloneNode(true);
-
-    template.querySelectorAll('input, select').forEach(element => {
-        element.value = '';
-        if (element.multiple) {
-            Array.from(element.options).forEach(opt => opt.selected = false);
-        }
-    });
-
-    template.querySelector('.remove-fund').addEventListener('click', function() {
-        if (container.children.length > 1) {
-            this.closest('.fund-entry').remove();
-            updateSummary();
-        }
-    });
-
-    container.appendChild(template);
-    updateSummary();
-}
-
-function initializeRemoveButtons() {
-    document.querySelectorAll('.remove-fund').forEach(button => {
-        button.addEventListener('click', function() {
-            const container = document.getElementById('funds-container');
-            if (container.children.length > 1) {
-                this.closest('.fund-entry').remove();
-                updateSummary();
-            }
-        });
-    });
-}
-
-function updateSummary() {
-    const entries = document.querySelectorAll('.fund-entry');
-    const total = Array.from(entries).reduce((sum, entry) => {
-        const amount = parseFloat(entry.querySelector('.fund-amount').value) || 0;
-        return sum + amount;
-    }, 0);
-
-    document.getElementById('total-funds').textContent = entries.length;
-    document.getElementById('total-amount').textContent = `${total.toFixed(2)}`;
-}
-</script>
+<script src="{% static 'main_app/js/add_treasury.js' %}"></script>
 {% endblock %}

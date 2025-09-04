@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Welcome{% endblock %}
+
+{% block content %}
+<div class="min-h-[60vh]">
+  <!-- Hero Section -->
+  <section class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#1a237e] to-[#283593] p-8 md:p-12 shadow-lg">
+    <div class="relative z-10 max-w-5xl">
+      <h1 class="text-3xl md:text-4xl font-extrabold text-white tracking-tight">HJCRSA Database</h1>
+      <p class="mt-3 text-blue-100 max-w-2xl">Manage members, dependents and treasury records efficiently. Use the quick search or jump into common actions below.</p>
+
+      <!-- Search Bar (same UX as members_list) -->
+      <form id="landing-search-form" class="mt-6 md:mt-8">
+        <div class="relative w-full md:w-[32rem]">
+          <input id="landing-search" type="text" placeholder="Search members..." class="w-full pl-12 pr-4 py-3 rounded-xl border border-indigo-200 focus:border-white focus:ring-2 focus:ring-white/30 text-gray-900" />
+          <div class="absolute left-4 top-1/2 -translate-y-1/2 text-white/80">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          </div>
+          <button type="submit" class="hidden">Search</button>
+        </div>
+        <p id="landing-search-msg" class="mt-2 text-sm text-yellow-100 hidden"></p>
+      </form>
+    </div>
+    <div class="absolute -right-24 -bottom-24 w-96 h-96 rounded-full bg-white/10 blur-3xl"></div>
+  </section>
+
+  <!-- Quick Actions -->
+  <section class="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <a href="{% url 'add_main_member' %}" class="group bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition">
+      <div class="flex items-center">
+        <div class="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-blue-700 mr-4 group-hover:scale-105 transition">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+        </div>
+        <div>
+          <p class="text-sm text-gray-500">Members</p>
+          <p class="text-base font-semibold text-gray-900">Add Member</p>
+        </div>
+      </div>
+    </a>
+    <a href="{% url 'add_treasury' %}" class="group bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition">
+      <div class="flex items-center">
+        <div class="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-700 mr-4 group-hover:scale-105 transition">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+        <div>
+          <p class="text-sm text-gray-500">Treasury</p>
+          <p class="text-base font-semibold text-gray-900">Add Payment</p>
+        </div>
+      </div>
+    </a>
+    <a href="{% url 'add_dependent' %}" class="group bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition">
+      <div class="flex items-center">
+        <div class="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-700 mr-4 group-hover:scale-105 transition">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+        </div>
+        <div>
+          <p class="text-sm text-gray-500">Dependents</p>
+          <p class="text-base font-semibold text-gray-900">Add Dependent</p>
+        </div>
+      </div>
+    </a>
+    <a href="{% url 'add_treasury_dep' %}" class="group bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition">
+      <div class="flex items-center">
+        <div class="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center text-purple-700 mr-4 group-hover:scale-105 transition">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+        </div>
+        <div>
+          <p class="text-sm text-gray-500">Treasury Dep</p>
+          <p class="text-base font-semibold text-gray-900">Add Dependant Payment</p>
+        </div>
+      </div>
+    </a>
+  </section>
+
+  <!-- Helpful Links -->
+  <section class="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <a href="{% url 'member_list' %}" class="bg-white rounded-xl p-4 border border-gray-100 hover:shadow transition flex items-center justify-between">
+      <div class="flex items-center">
+        <span class="w-8 h-8 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center mr-3"><i class="fas fa-user-friends"></i></span>
+        <span class="font-medium text-gray-800">Members Directory</span>
+      </div>
+      <i class="fas fa-chevron-right text-gray-400"></i>
+    </a>
+    <a href="{% url 'treasury_list' %}" class="bg-white rounded-xl p-4 border border-gray-100 hover:shadow transition flex items-center justify-between">
+      <div class="flex items-center">
+        <span class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center mr-3"><i class="fas fa-coins"></i></span>
+        <span class="font-medium text-gray-800">Treasury Records</span>
+      </div>
+      <i class="fas fa-chevron-right text-gray-400"></i>
+    </a>
+    <a href="{% url 'dependent_list' %}" class="bg-white rounded-xl p-4 border border-gray-100 hover:shadow transition flex items-center justify-between">
+      <div class="flex items-center">
+        <span class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-700 flex items-center justify-center mr-3"><i class="fas fa-baby"></i></span>
+        <span class="font-medium text-gray-800">Dependents List</span>
+      </div>
+      <i class="fas fa-chevron-right text-gray-400"></i>
+    </a>
+  </section>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'main_app/js/landing.js' %}"></script>
+{% endblock %}

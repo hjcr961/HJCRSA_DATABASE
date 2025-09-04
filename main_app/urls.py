@@ -22,9 +22,8 @@ urlpatterns = [
     path('member/<str:pk>/edit/', views.MemberUpdateView.as_view(), name='edit_member'),
     path('api/member/<int:card_number>/payments/', views.member_payments, name='member_payments'),
     path('api/member/<int:card_number>/dependents/', views.member_dependents, name='member_dependents'),
-    path('', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
     path('login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
-    path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
+    path('logout/', auth_views.LogoutView.as_view(), name='logout'),
     path('home/', views.home_view, name='home'),
     path('validate-card-number/', views.validate_card_number, name='validate_card_number'),
     path('api/member/<str:branch_member_number>/upload-picture/', views.upload_member_picture, name='upload_member_picture'),
@@ -40,6 +39,8 @@ urlpatterns = [
     path('barcodes/scanner/', views.barcode_scanner, name='barcode_scanner'),
     path('barcodes/lookup/', views.barcode_lookup, name='barcode_lookup'),
     path('api/member/<str:card_number>/details/', views.member_details_api, name='member_details_api'),
+    path('api/member/<str:branch_member_number>/picture/', views.member_picture_api, name='member_picture_api'),
     path('reports/fund/', views.fund_report, name='fund_report'),
+    path('api/member/search/', views.member_search_api, name='member_search_api'),
 
 ]

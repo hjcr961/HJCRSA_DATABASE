@@ -1,0 +1,63 @@
+/* Scoped styles for Add Treasury page. Keep functionality intact. */
+:root {
+  --blue-700: #1a237e;
+  --blue-600: #283593;
+  --blue-50: #e8eaf6;
+  --gray-900: #111827;
+  --gray-700: #374151;
+  --gray-500: #6b7280;
+  --gray-300: #d1d5db;
+  --gray-200: #e5e7eb;
+  --white: #ffffff;
+  --shadow-sm: 0 1px 2px 0 rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+}
+
+/* Light card polish */
+.add-treasury-card {
+  border: 1px solid rgba(17,24,39,0.06);
+  box-shadow: var(--shadow-md);
+}
+
+/* Fund entry grouping */
+.fund-entry {
+  position: relative;
+}
+.fund-entry:hover {
+  background: #eff6ff; /* blue-50-ish */
+}
+.fund-entry .remove-fund {
+  color: #dc2626;
+}
+.fund-entry .remove-fund:hover {
+  text-decoration: underline;
+}
+
+/* Chips and summary */
+.summary-card {
+  border: 1px solid var(--gray-200);
+}
+.summary-card .total-amount {
+  font-weight: 700;
+  color: var(--blue-700);
+}
+
+/* Overlays (validation/saving) */
+.overlay-panel {
+  background: rgba(0,0,0,0.5);
+}
+.overlay-box {
+  box-shadow: 0 15px 30px rgba(0,0,0,0.12);
+}
+
+/* Input focus accessibility */
+.add-treasury input:focus,
+.add-treasury select:focus {
+  outline: 2px solid rgba(26,35,126,0.3);
+  outline-offset: 2px;
+}
+
+/* Flatpickr alignment fix with left icon */
+#payment_date.flatpickr-input {
+  padding-left: 2.5rem;
+}

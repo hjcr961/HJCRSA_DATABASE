@@ -441,8 +441,27 @@ def validate_card_number(request):
 
 
 def member_list(request):
-    # Fetch members ordered by surname and name
-    members = MainMembers.objects.order_by('surname', 'name')
+    # Check for filtering parameters
+    surname_filter = request.GET.get('surname', '').strip()
+    card_filter = request.GET.get('card', '').strip()
+    
+    # Start with all members, then apply filters
+    members = MainMembers.objects.all()
+    
+    if surname_filter:
+        # Filter by exact surname match (case-insensitive)
+        members = members.filter(surname__iexact=surname_filter)
+    elif card_filter:
+        # Filter by exact card number match
+        try:
+            card_number = int(card_filter)
+            members = members.filter(card_number=card_number)
+        except (ValueError, TypeError):
+            # Invalid card number, show no results
+            members = members.none()
+    
+    # Order the filtered results
+    members = members.order_by('surname', 'name')
     
     # Fetch dependents
     dependents = Dependents.objects.order_by('surname', 'name')
@@ -807,7 +826,7 @@ def login_view(request):
             except Exception as e:
                 print(f"Failed to log action: {e}")
             
-            return redirect('main_app/home.html')
+            return redirect('home')
         else:
             messages.add_message(request, messages.ERROR, 'Invalid username or password')
             return render(request, 'registration/login.html')
@@ -842,7 +861,7 @@ def home_view(request):
         'current_year': current_year,  # Add this line
     }
     
-    return render(request, 'main_app/home.html', context)
+    return render(request, 'main_app/landing.html', context)
 
 @login_required
 def get_dependent_payments(request, card_number):
@@ -1036,16 +1055,116 @@ def barcode_lookup(request):
     except Elders.DoesNotExist:
         return JsonResponse({'error': 'Barcode not found'}, status=404)
 
+def member_search_api(request):
+    """
+    Search only by Card Number (exact) or Surname (exact, case-insensitive).
+    - If q is all digits: treat as Card_Number and return a single match.
+    - Else: treat as Surname and return all members with that exact surname.
+    Response shapes:
+      - Card number: {found: true, mode: 'card', card_number: int, name: 'First Last', count: 1}
+      - Surname: {found: true, mode: 'surname', surname: str, count: N, results: [{card_number, name, surname}]}
+      - Not found: 404 with {found: false}
+    """
+    q = (request.GET.get('q') or '').strip()
+    if not q:
+        return JsonResponse({'found': False, 'error': 'Empty query'}, status=400)
+
+    try:
+        with connection.cursor() as cursor:
+            # Card Number search (digits only)
+            if q.isdigit():
+                cursor.execute(
+                    """
+                    SELECT mm.Card_Number, mm.Name, mm.Surname
+                    FROM Main_Members mm
+                    WHERE mm.Card_Number = %s
+                    LIMIT 1
+                    """,
+                    [int(q)]
+                )
+                row = cursor.fetchone()
+                if row:
+                    return JsonResponse({
+                        'found': True,
+                        'mode': 'card',
+                        'card_number': row[0],
+                        'name': f"{row[1]} {row[2]}",
+                        'count': 1
+                    })
+                return JsonResponse({'found': False}, status=404)
+
+            # Surname search: exact match, case-insensitive
+            # Use LOWER() to ensure case-insensitive match across collations
+            cursor.execute(
+                """
+                SELECT mm.Card_Number, mm.Name, mm.Surname
+                FROM Main_Members mm
+                WHERE LOWER(mm.Surname) = LOWER(%s)
+                ORDER BY mm.Name, mm.Card_Number
+                """,
+                [q]
+            )
+            rows = cursor.fetchall()
+            if rows:
+                results = [
+                    {
+                        'card_number': r[0],
+                        'name': r[1],
+                        'surname': r[2],
+                    } for r in rows
+                ]
+                return JsonResponse({
+                    'found': True,
+                    'mode': 'surname',
+                    'surname': q,
+                    'count': len(results),
+                    'results': results,
+                })
+
+        return JsonResponse({'found': False}, status=404)
+    except Exception as e:
+        return JsonResponse({'found': False, 'error': str(e)}, status=500)
+
+
+def member_picture_api(request, branch_member_number):
+    """Stream the member picture bytes for given Branch_Member_Number with caching."""
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT picture_data
+                FROM Member_Pictures
+                WHERE Branch_Member_Number = %s
+                """,
+                [branch_member_number]
+            )
+            row = cursor.fetchone()
+            if not row or not row[0]:
+                # Return 404 to allow frontend to fallback to default image
+                return HttpResponse(status=404)
+            data = row[0]
+        # Build response with caching headers
+        resp = HttpResponse(data, content_type='image/jpeg')
+        resp['Cache-Control'] = 'public, max-age=86400'
+        return resp
+    except Exception as e:
+        print(f"Error in member_picture_api: {e}")
+        return HttpResponse(status=500)
+
+
 def member_details_api(request, card_number):
     try:
-        # Use raw SQL to match the rest of your codebase
+        # Fetch minimal member details
         with connection.cursor() as cursor:
-            cursor.execute("""
-                SELECT mm.card_number, mm.name, mm.surname, mm.branch, mm.gender, 
+            cursor.execute(
+                """
+                SELECT mm.card_number, mm.name, mm.surname, mm.branch, mm.gender,
                        mm.phone_number, mm.address, mm.branch_member_number, mm.church_title
                 FROM Main_Members mm
                 WHERE mm.card_number = %s
-            """, [card_number])
+                """,
+                [card_number]
+            )
 
             columns = [col[0] for col in cursor.description]
             result = cursor.fetchone()
@@ -1055,17 +1174,10 @@ def member_details_api(request, card_number):
 
             member_data = dict(zip(columns, result))
 
-            # Get picture data
-            cursor.execute("""
-                SELECT picture_data 
-                FROM Member_Pictures
-                WHERE Branch_Member_Number = %s
-            """, [member_data.get('branch_member_number')])
-
-            picture_row = cursor.fetchone()
-
-            if picture_row and picture_row[0]:
-                member_data['picture_url'] = f"data:image/jpeg;base64,{b64encode(picture_row[0]).decode()}"
+            # Provide a lightweight URL to fetch the picture separately (streamed, cacheable)
+            bmn = member_data.get('branch_member_number')
+            if bmn:
+                member_data['picture_url'] = f"/api/member/{bmn}/picture/"
             else:
                 member_data['picture_url'] = '/static/default-profile.jpg'
 

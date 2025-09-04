@@ -6,16 +6,61 @@ let itemsPerPage = 24;
 let currentFilters = {
     search: '',
     branch: '',
-    churchTitle: ''
+    churchTitle: '',
+    searchMode: 'general'  // 'general' or 'surname'
 };
 
 // Initialize on page load
+// Polyfill for CSS.escape in older browsers (e.g., some Safari builds)
+if (typeof CSS === 'undefined' || typeof CSS.escape !== 'function') {
+    window.CSS = window.CSS || {};
+    CSS.escape = function(value) {
+        return String(value).replace(/[^a-zA-Z0-9_\-]/g, function(ch) {
+            const hex = ch.charCodeAt(0).toString(16);
+            return "\\" + hex + " ";
+        });
+    };
+}
+
 document.addEventListener('DOMContentLoaded', function() {
+    // Pre-fill search from query param ?q= and auto-open by ?card=
+    const params = new URLSearchParams(window.location.search);
+    const q = (params.get('q') || '').trim();
+    const surnameParam = (params.get('surname') || '').trim();
+    const cardParam = (params.get('card') || '').trim();
+    
+    // Handle surname-specific search (exact match)
+    if (surnameParam) {
+        const input = document.getElementById('table-search');
+        if (input) { input.value = surnameParam; }
+        currentFilters.search = surnameParam.toLowerCase();
+        currentFilters.searchMode = 'surname';
+    } else if (q) {
+        const input = document.getElementById('table-search');
+        if (input) { input.value = q; }
+        currentFilters.search = q.toLowerCase();
+        currentFilters.searchMode = 'general';
+    }
     initializeMembers();
     initializeEventListeners();
     populateBranchFilter();
     populateChurchTitleFilter();
     updateDisplay();
+
+    // If a specific card is requested, filter to it and open the modal
+    if (cardParam) {
+        const input = document.getElementById('table-search');
+        if (input) { input.value = cardParam; }
+        currentFilters.search = cardParam.toLowerCase();
+        applyFilters();
+        setTimeout(() => {
+            const cardEl = document.querySelector(`.member-card[data-card-number="${CSS.escape(cardParam)}"]`);
+            if (cardEl) {
+                const btn = cardEl.querySelector('button');
+                if (btn) { showMemberDetails(btn); }
+            }
+        }, 50);
+    }
 });
 
 function initializeMembers() {
@@ -24,6 +69,7 @@ function initializeMembers() {
         element: card,
         cardNumber: (card.dataset.cardNumber || '').trim(),
         name: (card.dataset.name || '').trim(),
+        surname: (card.dataset.surname || '').trim(),
         branch: (card.dataset.branch || '').trim(),
         churchTitle: (card.dataset.churchTitle || '').trim(),
         phone: (card.dataset.phone || '').trim(),
@@ -155,6 +201,7 @@ function debounce(func, wait) {
 function handleSearch(event) {
     const searchTerm = event.target.value.toLowerCase().trim();
     currentFilters.search = searchTerm;
+    currentFilters.searchMode = 'general'; // Manual search is always general mode
 
     const clearBtn = document.getElementById('clearSearch');
     if (searchTerm) {
@@ -171,6 +218,7 @@ function clearSearch() {
     document.getElementById('table-search').value = '';
     document.getElementById('clearSearch').classList.add('hidden');
     currentFilters.search = '';
+    currentFilters.searchMode = 'general';
     currentPage = 1;
     applyFilters();
 }
@@ -216,7 +264,7 @@ function handleGenderFilter(gender) {
 }
 
 function clearAllFilters() {
-    currentFilters = { search: '', branch: '', churchTitle: '' };
+    currentFilters = { search: '', branch: '', churchTitle: '', searchMode: 'general' };
 
     document.getElementById('table-search').value = '';
     document.getElementById('clearSearch').classList.add('hidden');
@@ -230,10 +278,19 @@ function clearAllFilters() {
 function applyFilters() {
     filteredMembers = allMembers.filter(member => {
         if (currentFilters.search) {
-            const searchMatch =
-                member.cardNumber.toLowerCase().includes(currentFilters.search) ||
-                member.name.toLowerCase().includes(currentFilters.search) ||
-                member.branch.toLowerCase().includes(currentFilters.search);
+            let searchMatch = false;
+            
+            // If in surname mode, only match exact surname (case-insensitive)
+            if (currentFilters.searchMode === 'surname') {
+                searchMatch = member.surname.toLowerCase() === currentFilters.search;
+            } else {
+                // General search mode: check card number, name, or branch
+                searchMatch =
+                    member.cardNumber.toLowerCase().includes(currentFilters.search) ||
+                    member.name.toLowerCase().includes(currentFilters.search) ||
+                    member.branch.toLowerCase().includes(currentFilters.search);
+            }
+            
             if (!searchMatch) return false;
         }
 

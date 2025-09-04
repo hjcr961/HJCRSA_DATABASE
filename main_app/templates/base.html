@@ -167,9 +167,12 @@
                             <span class="text-xs text-green-600 font-medium">Online</span>
                         </div>
                     </div>
-                    <a href="{% url 'logout' %}" class="btn-logout text-gray-400 hover:text-red-600" title="Sign out">
-                        <i class="fas fa-sign-out-alt text-lg"></i>
-                    </a>
+                    <form method="post" action="{% url 'logout' %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-logout text-gray-400 hover:text-red-600" title="Sign out">
+                            <i class="fas fa-sign-out-alt text-lg"></i>
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
