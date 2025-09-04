@@ -43,6 +43,8 @@ if not DEBUG:
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SAMESITE = 'Lax'
+    CSRF_COOKIE_SAMESITE = 'Lax'
 
 ALLOWED_HOSTS = ['*']
 
@@ -75,7 +77,8 @@ MIDDLEWARE = [
 
 
 LOGIN_URL = 'login'
-LOGIN_REDIRECT_URL = 'member_list'
+LOGIN_REDIRECT_URL = 'home'
+LOGOUT_REDIRECT_URL = 'login'
 
 
 
