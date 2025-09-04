@@ -55,136 +55,234 @@ from django.db import connection
 from django.http import HttpResponse
 import openpyxl
 
-def fund_report(request):
-    # Get fund types for dropdown
-    with connection.cursor() as cursor:
-        cursor.execute("SELECT DISTINCT fund FROM Treasury ORDER BY fund")
-        fund_types = [row[0] for row in cursor.fetchall()]
+from django.db.models import Sum, Count, Q
 
-    # Get filters
-    start_date = request.GET.get('start_date')
-    end_date = request.GET.get('end_date')
-    selected_fund_type = request.GET.get('fund_type', '')
 
-    params = []
-    where_clauses = []
+def _get_fund_types_orm():
+    """Get distinct fund types using ORM."""
+    return Treasury.objects.values_list('fund', flat=True).distinct().order_by('fund')
+
+
+def _build_fund_queryset(start_date, end_date, selected_fund_type):
+    """Build queryset with filters using ORM."""
+    queryset = Treasury.objects.all()
 
     if start_date:
-        where_clauses.append("payment_date >= %s")
-        params.append(start_date)
+        queryset = queryset.filter(payment_date__gte=start_date)
     if end_date:
-        where_clauses.append("payment_date <= %s")
-        params.append(end_date)
+        queryset = queryset.filter(payment_date__lte=end_date)
     if selected_fund_type:
-        where_clauses.append("fund = %s")
-        params.append(selected_fund_type)
+        queryset = queryset.filter(fund=selected_fund_type)
 
-    where = ""
-    if where_clauses:
-        where = "WHERE " + " AND ".join(where_clauses)
+    return queryset
 
+
+def _get_fund_report_data_orm(queryset):
+    """Get aggregated fund data using ORM."""
+    return (queryset
+            .values('fund')
+            .annotate(
+        total_amount=Sum('amount'),
+        num_payments=Count('idtreasury')
+    )
+            .order_by('fund'))
+
+
+def _generate_excel_response(fund_data):
+    """Generate Excel file response for fund report."""
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Fund Report"
+
+    # Add headers
+    ws.append(["Fund Type", "Total Amount", "Number of Payments"])
+
+    # Add data rows
+    for row in fund_data:
+        ws.append([
+            row["fund"],
+            float(row["total_amount"] or 0),
+            row["num_payments"]
+        ])
+
+    # Create response
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = 'attachment; filename=fund_report.xlsx'
+    wb.save(response)
+    return response
+
+
+def fund_report(request):
+    """Generate fund report with optional Excel export using Django ORM."""
+    try:
+        # Get fund types for dropdown
+        fund_types = _get_fund_types_orm()
+
+        # Extract filter parameters
+        start_date = request.GET.get('start_date')
+        end_date = request.GET.get('end_date')
+        selected_fund_type = request.GET.get('fund_type', '')
+
+        # Build queryset with filters
+        queryset = _build_fund_queryset(start_date, end_date, selected_fund_type)
+
+        # Get aggregated fund data
+        fund_data = _get_fund_report_data_orm(queryset)
+
+        # Handle Excel export
+        if request.GET.get('export') == 'excel':
+            return _generate_excel_response(fund_data)
+
+        # Render HTML report
+        return render(request, "main_app/fund_report.html", {
+            "fund_data": fund_data,
+            "start_date": start_date,
+            "end_date": end_date,
+            "fund_types": fund_types,
+            "selected_fund_type": selected_fund_type,
+        })
+
+    except Exception as e:
+        # Log the error and show user-friendly message
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error in fund_report: {str(e)}")
+
+        messages.error(request, "An error occurred while generating the report.")
+        return render(request, "main_app/fund_report.html", {
+            "fund_data": [],
+            "start_date": start_date,
+            "end_date": end_date,
+            "fund_types": [],
+            "selected_fund_type": selected_fund_type,
+        })
+
+
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+def _validate_member_exists(branch_member_number):
+    """Validate that a member exists with the given branch member number."""
     with connection.cursor() as cursor:
-        cursor.execute(f"""
-            SELECT fund, SUM(amount) as total_amount, COUNT(*) as num_payments
-            FROM Treasury
-            {where}
-            GROUP BY fund
-            ORDER BY fund
-        """, params)
-        fund_data = [
-            {"fund": row[0], "total_amount": row[1], "num_payments": row[2]}
-            for row in cursor.fetchall()
-        ]
+        cursor.execute("""
+                       SELECT Branch_Member_Number
+                       FROM Main_Members
+                       WHERE Branch_Member_Number = %s
+                       """, [branch_member_number])
+        return cursor.fetchone() is not None
 
-    # Excel export
-    if request.GET.get('export') == 'excel':
-        import openpyxl
-        wb = openpyxl.Workbook()
-        ws = wb.active
-        ws.title = "Fund Report"
-        ws.append(["Fund Type", "Total Amount", "Number of Payments"])
-        for row in fund_data:
-            ws.append([row["fund"], float(row["total_amount"] or 0), row["num_payments"]])
-        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-        response['Content-Disposition'] = 'attachment; filename=fund_report.xlsx'
-        wb.save(response)
-        return response
 
-    return render(request, "main_app/fund_report.html", {
-        "fund_data": fund_data,
-        "start_date": start_date,
-        "end_date": end_date,
-        "fund_types": fund_types,
-        "selected_fund_type": selected_fund_type,
-    })
+def _process_uploaded_image(picture):
+    """Process and compress uploaded image."""
+    try:
+        img = Image.open(picture)
 
-@login_required  # Add this decorator if picture uploads should require login
+        # Convert image mode if necessary
+        if img.mode in ('RGBA', 'P'):
+            img = img.convert('RGB')
+
+        # Resize image
+        max_size = (800, 800)
+        img.thumbnail(max_size, Image.Resampling.LANCZOS)
+
+        # Compress image
+        buffer = BytesIO()
+        img.save(buffer, format='JPEG', quality=10, optimize=True)
+        compressed_image = buffer.getvalue()
+
+        # Check size limit
+        if len(compressed_image) > 65000:
+            raise ValueError('Image is too large after compression')
+
+        return compressed_image
+
+    except Exception as e:
+        logger.error(f"Image processing error: {str(e)}")
+        raise ValueError(f'Error processing image: {str(e)}')
+
+
+def _picture_exists(branch_member_number):
+    """Check if a picture already exists for the given member."""
+    with connection.cursor() as cursor:
+        cursor.execute("""
+                       SELECT COUNT(*)
+                       FROM Member_Pictures
+                       WHERE Branch_Member_Number = %s
+                       """, [branch_member_number])
+        return cursor.fetchone()[0] > 0
+
+
+def _save_member_picture(branch_member_number, compressed_image):
+    """Save or update member picture in database."""
+    try:
+        with connection.cursor() as cursor:
+            if _picture_exists(branch_member_number):
+                cursor.execute("""
+                               UPDATE Member_Pictures
+                               SET picture_data = %s,
+                                   upload_date  = %s
+                               WHERE Branch_Member_Number = %s
+                               """, [compressed_image, timezone.now(), branch_member_number])
+            else:
+                cursor.execute("""
+                               INSERT INTO Member_Pictures (Branch_Member_Number, picture_data, upload_date)
+                               VALUES (%s, %s, %s)
+                               """, [branch_member_number, compressed_image, timezone.now()])
+    except Exception as e:
+        logger.error(f"Database error saving picture for member {branch_member_number}: {str(e)}")
+        raise
+
+
+def _handle_picture_upload(request):
+    """Handle the picture upload process."""
+    picture = request.FILES['picture']
+    branch_member_number = request.POST.get('branch_member_number')
+
+    # Validate member exists
+    if not _validate_member_exists(branch_member_number):
+        messages.error(request, 'Invalid Branch Member Number. Please enter a valid member number.')
+        return redirect('upload_picture')
+
+    # Process image
+    try:
+        compressed_image = _process_uploaded_image(picture)
+    except ValueError as e:
+        messages.error(request, str(e))
+        return redirect('upload_picture')
+
+    # Save to database
+    try:
+        _save_member_picture(branch_member_number, compressed_image)
+        messages.success(request, 'Picture uploaded successfully!')
+        return redirect('member_list')
+    except Exception as e:
+        logger.error(f"Failed to save picture for member {branch_member_number}: {str(e)}")
+        messages.error(request, 'Failed to save picture. Please try again.')
+        return redirect('upload_picture')
+
+
+@login_required
 @require_http_methods(["GET", "POST"])
 def upload_picture(request):
+    """Handle member picture upload with validation and processing."""
     if request.method == 'POST':
-        if 'picture' in request.FILES:
-            picture = request.FILES['picture']
-            branch_member_number = request.POST.get('branch_member_number')
+        # Validate required data
+        if 'picture' not in request.FILES:
+            messages.error(request, 'Please select a picture to upload.')
+            return redirect('upload_picture')
 
-            # First verify the member exists
-            with connection.cursor() as cursor:
-                cursor.execute("""
-                    SELECT Branch_Member_Number 
-                    FROM Main_Members 
-                    WHERE Branch_Member_Number = %s
-                """, [branch_member_number])
-                member_exists = cursor.fetchone()
+        if not request.POST.get('branch_member_number'):
+            messages.error(request, 'Please provide a branch member number.')
+            return redirect('upload_picture')
 
-                if not member_exists:
-                    messages.error(request, 'Invalid Branch Member Number. Please enter a valid member number.')
-                    return redirect('upload_picture')
+        # Handle the upload
+        return _handle_picture_upload(request)
 
-            # Process image if member exists
-            try:
-                img = Image.open(picture)
-                if img.mode in ('RGBA', 'P'):
-                    img = img.convert('RGB')
-
-                max_size = (800, 800)
-                img.thumbnail(max_size, Image.Resampling.LANCZOS)
-
-                buffer = BytesIO()
-                img.save(buffer, format='JPEG', quality=10, optimize=True)
-                compressed_image = buffer.getvalue()
-
-                if len(compressed_image) > 65000:
-                    messages.error(request, 'Image is too large. Please use a smaller image.')
-                    return redirect('upload_picture')
-
-                # Check if picture already exists
-                with connection.cursor() as cursor:
-                    cursor.execute("""
-                        SELECT COUNT(*) FROM Member_Pictures
-                        WHERE Branch_Member_Number = %s
-                    """, [branch_member_number])
-                    picture_exists = cursor.fetchone()[0] > 0
-
-                # Insert or update the picture
-                with connection.cursor() as cursor:
-                    if picture_exists:
-                        cursor.execute("""
-                            UPDATE Member_Pictures
-                            SET picture_data = %s, upload_date = %s
-                            WHERE Branch_Member_Number = %s
-                        """, [compressed_image, timezone.now(), branch_member_number])
-                    else:
-                        cursor.execute("""
-                            INSERT INTO Member_Pictures (Branch_Member_Number, picture_data, upload_date) 
-                            VALUES (%s, %s, %s)
-                        """, [branch_member_number, compressed_image, timezone.now()])
-
-                messages.success(request, 'Picture uploaded successfully!')
-                return redirect('member_list')  # Changed from 'home' to 'member_list'
-
-            except Exception as e:
-                messages.error(request, f'Error: {str(e)}')
-                return redirect('upload_picture')
-
+    # GET request - show upload form
     return render(request, 'main_app/upload_picture.html')
 
 
@@ -318,17 +416,6 @@ def add_dependent(request):
         form = DependentsForm()
     return render(request, 'main_app/add_dependent.html', {'form': form})
 
-@permission_required('main_app.add_treasury', raise_exception=True)
-def add_treasury(request):
-    if request.method == 'POST':
-        form = TreasuryForm(request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'Treasury record added successfully!')
-            return redirect('treasury_list')
-    else:
-        form = TreasuryForm()
-    return render(request, 'main_app/add_treasury.html', {'form': form})
 
 
 def add_treasury_dep(request):
@@ -543,6 +630,8 @@ def member_dependents(request, card_number):
         
     return JsonResponse(dependents, safe=False)
 
+
+
 @permission_required('main_app.add_treasury', raise_exception=True)
 def add_treasury(request):
     if request.method == 'POST':
@@ -551,24 +640,24 @@ def add_treasury(request):
             fund_types = request.POST.getlist('fund[]')
             fund_years = request.POST.getlist('fund_date_year[]')
             amounts = request.POST.getlist('amount[]')
+            receipt_numbers = request.POST.getlist('receipt_number[]')
             idmain_member = request.POST.get('idmain_member')
             payment_date = request.POST.get('payment_date')
-            receipt_number = request.POST.get('receipt_number')
             fund_months = request.POST.getlist('fund_date_month[]')
 
             # Comprehensive input validation
-            if not all([fund_types, fund_years, amounts, idmain_member, 
-                        payment_date, receipt_number, fund_months]):
+            if not all([fund_types, fund_years, amounts, receipt_numbers, idmain_member,
+                        payment_date, fund_months]):
                 return JsonResponse({
-                    'success': False, 
+                    'success': False,
                     'error': 'All fields are required'
                 }, status=400)
 
             # Validate list lengths match
-            if not (len(fund_types) == len(fund_years) == 
-                    len(amounts) == len(fund_months)):
+            if not (len(fund_types) == len(fund_years) ==
+                    len(amounts) == len(fund_months) == len(receipt_numbers)):
                 return JsonResponse({
-                    'success': False, 
+                    'success': False,
                     'error': 'Mismatched input lengths'
                 }, status=400)
 
@@ -579,9 +668,10 @@ def add_treasury(request):
                     # Robust parsing and conversion
                     years = json.loads(fund_years[i])
                     amount = float(amounts[i])
+                    receipt_number = int(receipt_numbers[i])
                 except (ValueError, json.JSONDecodeError) as e:
                     return JsonResponse({
-                        'success': False, 
+                        'success': False,
                         'error': f'Invalid data at index {i}: {str(e)}'
                     }, status=400)
 
@@ -603,31 +693,33 @@ def add_treasury(request):
                 Treasury.objects.bulk_create(treasury_objects)
             else:
                 return JsonResponse({
-                    'success': False, 
+                    'success': False,
                     'error': 'No treasury entries to create'
                 }, status=400)
-            
+
             return JsonResponse({
-                'success': True, 
+                'success': True,
                 'redirect_url': reverse('treasury_list')
             })
-        
+
         except Exception as e:
             # Catch-all error handling
             return JsonResponse({
-                'success': False, 
+                'success': False,
                 'error': f'Unexpected error: {str(e)}'
             }, status=500)
-    
+
     # GET request handling remains identical
     form = TreasuryForm()
     current_year = datetime.now().year
     years = range(current_year - 5, current_year + 3)
-    
+
     return render(request, 'main_app/add_treasury.html', {
         'form': form,
         'years': years
     })
+
+
 
 
 @permission_required('main_app.add_treasurydep', raise_exception=True)

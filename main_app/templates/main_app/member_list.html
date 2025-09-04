@@ -59,7 +59,7 @@
     <div class="flex flex-wrap gap-2 items-center">
         <!-- Branch Filter -->
         <div class="filter-dropdown">
-            <button id="branchFilterBtn" class="inline-flex items-center px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all">
+            <button id="branchFilterBtn" class="inline-flex items-center px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all" aria-haspopup="listbox" aria-controls="branchFilterContent">
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-5 0H3m2 0h3M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
                 </svg>
@@ -68,15 +68,15 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                 </svg>
             </button>
-            <div id="branchFilterContent" class="filter-content">
-                <div class="filter-option" data-branch="">All Branches</div>
+            <div id="branchFilterContent" class="filter-content" role="listbox">
+                <div class="filter-option" data-branch="" role="option">All Branches</div>
                 <!-- Branch options will be populated dynamically -->
             </div>
         </div>
 
         <!-- Church Title Filter -->
         <div class="filter-dropdown">
-            <button id="churchTitleFilterBtn" class="inline-flex items-center px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all">
+            <button id="churchTitleFilterBtn" class="inline-flex items-center px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all" aria-haspopup="listbox" aria-controls="churchTitleFilterContent">
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-5 0H3m2 0h3M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
                 </svg>
@@ -85,8 +85,8 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                 </svg>
             </button>
-            <div id="churchTitleFilterContent" class="filter-content">
-                <div class="filter-option" data-church-title="">All Titles</div>
+            <div id="churchTitleFilterContent" class="filter-content" role="listbox">
+                <div class="filter-option" data-church-title="" role="option">All Titles</div>
                 <!-- Church title options will be populated dynamically -->
             </div>
         </div>
@@ -142,7 +142,7 @@
 
     <!-- Results Info -->
     <div class="results-info mb-4">
-        <span id="resultsInfo">Loading...</span>
+        <span id="resultsInfo" aria-live="polite">Loading...</span>
     </div>
 
     <!-- Members Grid -->
@@ -152,17 +152,16 @@
              data-card-number="{{ member.card_number }}"
              data-name="{{ member.name }} {{ member.surname }}"
              data-branch="{{ member.branch }}"
-             data-church-title="{{ member.church_title|default:'' }}"
+             {% if member.church_title %}data-church-title="{{ member.church_title }}"{% else %}data-church-title=""{% endif %}
              data-phone="{{ member.phone_number }}"
              data-address="{{ member.address }}"
              data-picture="{{ member.picture_url }}"
-             data-branch-number="{{ member.branch_member_number }}"
-             data-church-title="{{ member.church_title }}">
+             data-branch-number="{{ member.branch_member_number }}">
 
             <!-- Card Header with Image -->
-            <div class="relative h-24 bg-gradient-to-r from-[#1a237e] to-[#283593]">
+            <div class="member-card-header relative h-24 bg-gradient-to-r from-[#1a237e] to-[#283593]">
                 <div class="absolute -bottom-10 left-4">
-                    <img class="h-20 w-20 rounded-full border-4 border-white object-cover"
+                    <img class="member-avatar h-20 w-20 rounded-full border-4 border-white object-cover"
                          src="{{ member.picture_url }}"
                          alt="{{ member.name }}"
                          loading="lazy">
@@ -172,7 +171,7 @@
             <!-- Card Content -->
             <div class="pt-12 pb-6 px-4">
                 <h3 class="text-lg font-bold text-gray-900">{{ member.name }} {{ member.surname }}</h3>
-                <p class="text-sm text-[#1a237e] font-medium">{{ member.card_number }}</p>
+                <p class="card-number-chip text-sm text-[#1a237e] font-medium">{{ member.card_number }}</p>
 
                 <div class="mt-4 space-y-2">
                     <div class="flex items-center text-sm">
@@ -185,22 +184,22 @@
                     </div>
                     <div class="flex items-center text-sm">
                         <span class="font-medium text-gray-500 w-24">Title:</span>
-                        <span>{{ member.church_title|default:"-" }}</span>
+                        <span>{% if member.church_title %}{{ member.church_title }}{% else %}-{% endif %}</span>
                     </div>
                 </div>
 
                 <!-- Card Actions -->
-                <div class="mt-6 flex flex-wrap gap-2">
+                <div class="member-card-actions mt-6 flex flex-wrap gap-2">
                     <button onclick="showMemberDetails(this)"
-                    class="px-3 py-1.5 bg-[#e8eaf6] text-[#1a237e] text-xs rounded-lg hover:bg-[#c5cae9] transition-colors">
+                    class="px-3 py-1.5 bg-[#e8eaf6] text-[#1a237e] text-xs rounded-lg hover:bg-[#c5cae9] transition-colors" title="View member details">
                         View Details
                     </button>
                     <button onclick="showPaymentHistory('{{ member.card_number }}')"
-                    class="px-3 py-1.5 bg-green-50 text-green-700 text-xs rounded-lg hover:bg-green-100 transition-colors">
+                    class="px-3 py-1.5 bg-green-50 text-green-700 text-xs rounded-lg hover:bg-green-100 transition-colors" title="View card payment history">
                         Card Payments
                     </button>
                     <button onclick="showDependents('{{ member.card_number }}', '{{ member.name }} {{ member.surname }}')"
-                    class="px-3 py-1.5 bg-blue-50 text-blue-700 text-xs rounded-lg hover:bg-blue-100 transition-colors">
+                    class="px-3 py-1.5 bg-blue-50 text-blue-700 text-xs rounded-lg hover:bg-blue-100 transition-colors" title="View dependents">
                         Dependents ({{ member.dependent_count }})
                     </button>
                     <a href="{% url 'edit_member' pk=member.card_number %}"
@@ -299,6 +298,7 @@
     </div>
 </div>
 
+
 <!-- Payment History Modal -->
 <div id="paymentHistoryModal" tabindex="-1" aria-hidden="true" class="fixed top-0 left-0 right-0 z-50 hidden w-full p-4 overflow-x-hidden overflow-y-auto md:inset-0 h-[calc(100%-1rem)] max-h-full bg-black bg-opacity-50">
     <div class="relative w-full max-w-4xl max-h-full mx-auto mt-10">
@@ -306,7 +306,7 @@
             <!-- Modal Header -->
             <div class="flex items-center justify-between p-6 border-b bg-gradient-to-r from-[#1a237e] to-[#283593]">
                 <h3 class="text-xl font-bold text-white">Payment History</h3>
-                <button type="button" class="text-gray-200 hover:text-white hover:bg-[#283593] rounded-lg w-8 h-8 flex items-center justify-center transition-all duration-200" onclick="closePaymentModal()">
+                <button type="button" class="text-gray-200 hover:text-white hover:bg-[#283593] rounded-lg w-8 h-8 flex items-center justify-center transition-all duration-200" onclick="closePaymentModal()" aria-label="Close payment history modal">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                     </svg>
@@ -344,7 +344,7 @@
             <!-- Modal Header -->
             <div class="flex items-center justify-between p-6 border-b bg-gradient-to-r from-[#1a237e] to-[#283593]">
                 <h3 class="text-xl font-bold text-white" id="dependentsModalTitle">Dependents</h3>
-                <button type="button" class="text-gray-200 hover:text-white hover:bg-[#283593] rounded-lg w-8 h-8 flex items-center justify-center transition-all duration-200" onclick="closeDependentsModal()">
+                <button type="button" class="text-gray-200 hover:text-white hover:bg-[#283593] rounded-lg w-8 h-8 flex items-center justify-center transition-all duration-200" onclick="closeDependentsModal()" aria-label="Close dependents modal">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                     </svg>
@@ -379,7 +379,7 @@
             <!-- Modal Header -->
             <div class="flex items-center justify-between p-6 border-b bg-gradient-to-r from-[#1a237e] to-[#283593]">
                 <h3 class="text-xl font-bold text-white" id="dependentPaymentModalTitle">Dependent Payment History</h3>
-                <button type="button" class="text-gray-200 hover:text-white hover:bg-[#283593] rounded-lg w-8 h-8 flex items-center justify-center transition-all duration-200" onclick="closeDependentPaymentModal()">
+                <button type="button" class="text-gray-200 hover:text-white hover:bg-[#283593] rounded-lg w-8 h-8 flex items-center justify-center transition-all duration-200" onclick="closeDependentPaymentModal()" aria-label="Close dependent payment history modal">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                     </svg>
