@@ -1,12 +1,11 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
-import uuid
 from .models import MainMembers, Elders
-from .barcode_utils import generate_barcode_image
+from .barcode_utils import generate_barcode_image, generate_8_digit_barcode
 
 # List of titles eligible for barcodes
-ELIGIBLE_TITLES = ['EVANGELIST', 'PASTOR', 'ELDER']
+ELIGIBLE_TITLES = ['EVANGELIST', 'PASTOR', 'ELDER', 'MAMKHOKHELI']
 
 @receiver(post_save, sender=MainMembers)
 def create_barcode_for_eligible_member(sender, instance, created, **kwargs):
@@ -15,9 +14,8 @@ def create_barcode_for_eligible_member(sender, instance, created, **kwargs):
     """
     # Check if this member has an eligible title and doesn't already have a barcode
     if instance.church_title in ELIGIBLE_TITLES and not Elders.objects.filter(branch_member_number=instance).exists():
-        # Generate prefix based on title (EV for EVANGELIST, PS for PASTOR, etc.)
-        prefix = ''.join([word[0] for word in instance.church_title.split()]).upper()
-        barcode_value = f"{prefix}-{instance.branch_member_number}-{uuid.uuid4().hex[:6].upper()}"
+        # Generate 8-digit numeric barcode
+        barcode_value = generate_8_digit_barcode(instance)
         
         # Generate barcode image
         barcode_image = generate_barcode_image(barcode_value)
