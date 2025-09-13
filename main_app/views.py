@@ -167,13 +167,7 @@ logger = logging.getLogger(__name__)
 
 def _validate_member_exists(branch_member_number):
     """Validate that a member exists with the given branch member number."""
-    with connection.cursor() as cursor:
-        cursor.execute("""
-                       SELECT Branch_Member_Number
-                       FROM Main_Members
-                       WHERE Branch_Member_Number = %s
-                       """, [branch_member_number])
-        return cursor.fetchone() is not None
+    return MainMembers.objects.filter(branch_member_number=branch_member_number).exists()
 
 
 def _process_uploaded_image(picture):
@@ -205,33 +199,19 @@ def _process_uploaded_image(picture):
         raise ValueError(f'Error processing image: {str(e)}')
 
 
-def _picture_exists(branch_member_number):
-    """Check if a picture already exists for the given member."""
-    with connection.cursor() as cursor:
-        cursor.execute("""
-                       SELECT COUNT(*)
-                       FROM Member_Pictures
-                       WHERE Branch_Member_Number = %s
-                       """, [branch_member_number])
-        return cursor.fetchone()[0] > 0
-
-
 def _save_member_picture(branch_member_number, compressed_image):
-    """Save or update member picture in database."""
+    """Save or update member picture in database using single UPSERT query."""
     try:
         with connection.cursor() as cursor:
-            if _picture_exists(branch_member_number):
-                cursor.execute("""
-                               UPDATE Member_Pictures
-                               SET picture_data = %s,
-                                   upload_date  = %s
-                               WHERE Branch_Member_Number = %s
-                               """, [compressed_image, timezone.now(), branch_member_number])
-            else:
-                cursor.execute("""
-                               INSERT INTO Member_Pictures (Branch_Member_Number, picture_data, upload_date)
-                               VALUES (%s, %s, %s)
-                               """, [branch_member_number, compressed_image, timezone.now()])
+            # Use INSERT ... ON CONFLICT DO UPDATE (UPSERT) to handle both insert and update in one query
+            cursor.execute("""
+                           INSERT INTO Member_Pictures (Branch_Member_Number, picture_data, upload_date)
+                           VALUES (%s, %s, %s)
+                           ON CONFLICT (Branch_Member_Number)
+                           DO UPDATE SET 
+                               picture_data = EXCLUDED.picture_data,
+                               upload_date = EXCLUDED.upload_date
+                           """, [branch_member_number, compressed_image, timezone.now()])
     except Exception as e:
         logger.error(f"Database error saving picture for member {branch_member_number}: {str(e)}")
         raise
@@ -445,8 +425,16 @@ def member_list(request):
     surname_filter = request.GET.get('surname', '').strip()
     card_filter = request.GET.get('card', '').strip()
     
-    # Start with all members, then apply filters
-    members = MainMembers.objects.all()
+    # Start with optimized queryset using select_related and prefetch_related
+    members = MainMembers.objects.select_related().prefetch_related(
+        'memberpictures',  # Prefetch related pictures
+        'dependents'       # Prefetch related dependents
+    )
+    
+    # Use annotation to get dependent counts efficiently
+    members = members.annotate(
+        dependent_count=Count('dependents', distinct=True)
+    )
     
     if surname_filter:
         # Filter by exact surname match (case-insensitive)
@@ -463,37 +451,24 @@ def member_list(request):
     # Order the filtered results
     members = members.order_by('surname', 'name')
     
-    # Fetch dependents
-    dependents = Dependents.objects.order_by('surname', 'name')
+    # Fetch dependents using optimized query
+    dependents = Dependents.objects.select_related('card_number').order_by('surname', 'name')
 
-    # Fetch pictures using raw SQL (since Member_Pictures is not a Django model)
-    with connection.cursor() as cursor:
-        cursor.execute("""
-            SELECT Branch_Member_Number, picture_data 
-            FROM Member_Pictures
-        """)
-        pictures = dict(cursor.fetchall())
-
-        # Fetch dependent counts using raw SQL
-        cursor.execute("""
-            SELECT Card_Number, COUNT(*) as dependent_count
-            FROM Dependents
-            GROUP BY Card_Number
-        """)
-        dependent_counts = dict(cursor.fetchall())
-
-    # Enrich member data
+    # Enrich member data using prefetched relationships
     for member in members:
-        # Add picture URL
-        picture_data = pictures.get(member.branch_member_number)
-        member.picture_url = (
-            f"data:image/jpeg;base64,{b64encode(picture_data).decode()}"
-            if picture_data
-            else '/static/default-profile.jpg'
-        )
+        # Add picture URL using prefetched relationship
+        try:
+            picture_data = member.memberpictures.picture_data
+            member.picture_url = (
+                f"data:image/jpeg;base64,{b64encode(picture_data).decode()}"
+                if picture_data
+                else '/static/default-profile.jpg'
+            )
+        except (AttributeError, MemberPictures.DoesNotExist):
+            member.picture_url = '/static/default-profile.jpg'
 
-        # Add dependent count
-        member.dependent_count = dependent_counts.get(member.card_number, 0)
+        # dependent_count is already available from annotation
+        # No additional query needed
 
     # Render the template
     return render(request, 'main_app/member_list.html', {
@@ -533,24 +508,17 @@ def treasury_list(request):
 
 @permission_required('main_app.view_treasurydep', raise_exception=True)
 def treasury_dep_list(request):
-    with connection.cursor() as cursor:
-        cursor.execute("""
-            SELECT idTreasury_Dep, card_number, amount, fund, payment_date, Reciept_Number 
-            FROM Treasury_Dep 
-            ORDER BY payment_date DESC
-        """)
-        
-        treasury_dep_records = [
-            {
-                'idTreasury_Dep': row[0],
-                'card_number': row[1],
-                'amount': row[2],
-                'fund': row[3],
-                'payment_date': row[4],
-                'Reciept_Number': row[5]
-            }
-            for row in cursor.fetchall()
-        ]
+    treasury_dep_records = [
+        {
+            'idTreasury_Dep': record.idtreasury_dep,
+            'card_number': record.card_number,
+            'amount': record.amount,
+            'fund': record.fund,
+            'payment_date': record.payment_date,
+            'Reciept_Number': record.reciept_number
+        }
+        for record in TreasuryDep.objects.all().order_by('-payment_date')
+    ]
     
     return render(request, 'main_app/treasury_dep_list.html', {'treasury_dep_records': treasury_dep_records})
 
@@ -604,25 +572,17 @@ class MemberUpdateView(UpdateView):
 
 
 def member_payments(request, card_number):
-    with connection.cursor() as cursor:
-        cursor.execute("""
-            SELECT fund, amount, Fund_Date_Year, Fund_Date_Month, payment_date, receipt_number 
-            FROM Treasury 
-            WHERE idMain_Member = %s
-            ORDER BY payment_date DESC
-        """, [card_number])
-        
-        payments = [
-            {
-                'fund': row[0],
-                'amount': row[1],
-                'Fund_Date_Year': row[2],
-                'Fund_Date_Month': row[3],
-                'payment_date': row[4].strftime('%Y-%m-%d'),
-                'receipt_number': row[5]
-            }
-            for row in cursor.fetchall()
-        ]
+    payments = [
+        {
+            'fund': payment.fund,
+            'amount': payment.amount,
+            'Fund_Date_Year': payment.fund_date_year,
+            'Fund_Date_Month': payment.fund_date_month,
+            'payment_date': payment.payment_date.strftime('%Y-%m-%d'),
+            'receipt_number': payment.receipt_number
+        }
+        for payment in Treasury.objects.filter(idmain_member=card_number).order_by('-payment_date')
+    ]
         
     return JsonResponse(payments, safe=False)
 
@@ -630,22 +590,14 @@ def member_payments(request, card_number):
 
 
 def member_dependents(request, card_number):
-    with connection.cursor() as cursor:
-        cursor.execute("""
-            SELECT idDependents, name, surname 
-            FROM Dependents 
-            WHERE Card_Number = %s
-            ORDER BY name
-        """, [card_number])
-        
-        dependents = [
-            {
-                'idDependents': row[0],
-                'name': row[1],
-                'surname': row[2]
-            }
-            for row in cursor.fetchall()
-        ]
+    dependents = [
+        {
+            'idDependents': dependent.iddependents,
+            'name': dependent.name,
+            'surname': dependent.surname
+        }
+        for dependent in Dependents.objects.filter(card_number=card_number).order_by('name')
+    ]
         
     return JsonResponse(dependents, safe=False)
 
@@ -815,7 +767,6 @@ def login_view(request):
             login(request, user)
             
             # Log the login action
-            from .utils import log_user_action
             try:
                 log_user_action(
                     user_email=user.email,
@@ -1071,8 +1022,9 @@ def member_search_api(request):
 
     try:
         with connection.cursor() as cursor:
-            # Card Number search (digits only)
+            # Optimized approach: determine search type once and execute appropriate query
             if q.isdigit():
+                # Card Number search (digits only) - optimized with single query execution
                 cursor.execute(
                     """
                     SELECT mm.Card_Number, mm.Name, mm.Surname
@@ -1091,35 +1043,33 @@ def member_search_api(request):
                         'name': f"{row[1]} {row[2]}",
                         'count': 1
                     })
-                return JsonResponse({'found': False}, status=404)
-
-            # Surname search: exact match, case-insensitive
-            # Use LOWER() to ensure case-insensitive match across collations
-            cursor.execute(
-                """
-                SELECT mm.Card_Number, mm.Name, mm.Surname
-                FROM Main_Members mm
-                WHERE LOWER(mm.Surname) = LOWER(%s)
-                ORDER BY mm.Name, mm.Card_Number
-                """,
-                [q]
-            )
-            rows = cursor.fetchall()
-            if rows:
-                results = [
-                    {
-                        'card_number': r[0],
-                        'name': r[1],
-                        'surname': r[2],
-                    } for r in rows
-                ]
-                return JsonResponse({
-                    'found': True,
-                    'mode': 'surname',
-                    'surname': q,
-                    'count': len(results),
-                    'results': results,
-                })
+            else:
+                # Surname search: exact match, case-insensitive - optimized query structure
+                cursor.execute(
+                    """
+                    SELECT mm.Card_Number, mm.Name, mm.Surname
+                    FROM Main_Members mm
+                    WHERE LOWER(mm.Surname) = LOWER(%s)
+                    ORDER BY mm.Name, mm.Card_Number
+                    """,
+                    [q]
+                )
+                rows = cursor.fetchall()
+                if rows:
+                    results = [
+                        {
+                            'card_number': r[0],
+                            'name': r[1],
+                            'surname': r[2],
+                        } for r in rows
+                    ]
+                    return JsonResponse({
+                        'found': True,
+                        'mode': 'surname',
+                        'surname': q,
+                        'count': len(results),
+                        'results': results,
+                    })
 
         return JsonResponse({'found': False}, status=404)
     except Exception as e:
