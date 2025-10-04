@@ -141,14 +141,6 @@
                             <span class="w-1/3 text-gray-500 text-sm">Branch:</span>
                             <span id="member-branch" class="w-2/3 text-gray-900 font-medium"></span>
                         </div>
-                        <div class="flex py-3 px-4">
-                            <span class="w-1/3 text-gray-500 text-sm">Issue Date:</span>
-                            <span id="member-issue-date" class="w-2/3 text-gray-900 font-medium"></span>
-                        </div>
-                        <div class="flex py-3 px-4">
-                            <span class="w-1/3 text-gray-500 text-sm">Expiry Date:</span>
-                            <span id="member-expiry-date" class="w-2/3 text-gray-900 font-medium"></span>
-                        </div>
                     </div>
                 </div>
                 
@@ -160,13 +152,79 @@
                         Scan Another
                     </button>
                     
-                    <a id="view-details-link" href="#" class="bg-primary-600 hover:bg-primary-700 text-white py-2 px-4 rounded-lg inline-flex items-center transition-colors">
+                    <button id="view-details-btn" onclick="showMemberModal()" class="bg-primary-600 hover:bg-primary-700 text-white py-2 px-4 rounded-lg inline-flex items-center transition-colors">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                         </svg>
-                        View Full Details
-                    </a>
+                        View Details
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Member Detail Modal -->
+<div id="memberDetailModal" tabindex="-1" aria-hidden="true" class="fixed top-0 left-0 right-0 z-50 hidden w-full p-4 overflow-x-hidden overflow-y-auto md:inset-0 h-[calc(100%-1rem)] max-h-full bg-black bg-opacity-50">
+    <div class="relative w-full max-w-4xl max-h-full mx-auto mt-10">
+        <div class="relative bg-white rounded-2xl shadow-2xl overflow-hidden">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between p-6 border-b bg-gradient-to-r from-primary-600 to-primary-700">
+                <h3 class="text-xl font-bold text-white" id="modalMemberName">
+                    <span id="modalMemberNameText"></span>
+                    <span class="text-sm text-primary-100 ml-2" id="modalBranchMemberNumber"></span>
+                </h3>
+                <button type="button" class="text-primary-100 hover:text-white hover:bg-primary-700 rounded-lg w-8 h-8 flex items-center justify-center transition-all duration-200" onclick="closeModal()">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Modal Content -->
+            <div class="p-8">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Member Details Section -->
+                    <div>
+                        <h4 class="text-lg font-semibold text-gray-800 mb-4">Member Information</h4>
+                        <div class="space-y-4">
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <label class="text-xs font-semibold text-gray-500 uppercase">Card Number</label>
+                                <p id="modalCardNumber" class="mt-1 text-sm font-medium text-gray-900"></p>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <label class="text-xs font-semibold text-gray-500 uppercase">Name</label>
+                                <p id="modalName" class="mt-1 text-sm font-medium text-gray-900"></p>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <label class="text-xs font-semibold text-gray-500 uppercase">Branch</label>
+                                <p id="modalBranch" class="mt-1 text-sm font-medium text-gray-900"></p>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <label class="text-xs font-semibold text-gray-500 uppercase">Church Title</label>
+                                <p id="modalChurchTitle" class="mt-1 text-sm font-medium text-gray-900"></p>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <label class="text-xs font-semibold text-gray-500 uppercase">Phone</label>
+                                <p id="modalPhone" class="mt-1 text-sm font-medium text-gray-900"></p>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <label class="text-xs font-semibold text-gray-500 uppercase">Address</label>
+                                <p id="modalAddress" class="mt-1 text-sm font-medium text-gray-900"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Payment History Section -->
+                    <div>
+                        <h4 class="text-lg font-semibold text-gray-800 mb-4">Payment History</h4>
+                        <div id="modalPaymentHistory" class="bg-gray-50 rounded-lg p-4 max-h-96 overflow-y-auto">
+                            <div class="text-center text-gray-500">
+                                Loading payment history...
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -204,9 +262,6 @@
         const memberStatus = document.getElementById('member-status');
         const memberNumber = document.getElementById('member-number');
         const memberBranch = document.getElementById('member-branch');
-        const memberIssueDate = document.getElementById('member-issue-date');
-        const memberExpiryDate = document.getElementById('member-expiry-date');
-        const viewDetailsLink = document.getElementById('view-details-link');
         
         // Scanner state
         let scannerActive = false;
@@ -376,9 +431,9 @@
                     memberTitle.textContent = member.title;
                     memberNumber.textContent = member.branch_member_number;
                     memberBranch.textContent = member.branch;
-                    memberIssueDate.textContent = member.issue_date;
-                    memberExpiryDate.textContent = member.expiry_date;
-                    viewDetailsLink.href = member.detail_url;
+                    
+                    // Store member data for modal
+                    window.currentMember = member;
                     
                     // Set status badge
                     if (member.status === 'active') {
@@ -436,6 +491,83 @@
                 stopScanner();
             }
         });
+        
+        // Modal functions
+        window.showMemberModal = function() {
+            if (!window.currentMember) {
+                console.error('No member data available');
+                return;
+            }
+            
+            const member = window.currentMember;
+            const modal = document.getElementById('memberDetailModal');
+            
+            // Populate modal with member data
+            document.getElementById('modalMemberNameText').textContent = `${member.name} ${member.surname}`;
+            document.getElementById('modalBranchMemberNumber').textContent = `#${member.branch_member_number}`;
+            document.getElementById('modalCardNumber').textContent = member.card_number || 'N/A';
+            document.getElementById('modalName').textContent = `${member.name} ${member.surname}`;
+            document.getElementById('modalBranch').textContent = member.branch || 'N/A';
+            document.getElementById('modalChurchTitle').textContent = member.title || 'N/A';
+            document.getElementById('modalPhone').textContent = member.phone_number || 'N/A';
+            document.getElementById('modalAddress').textContent = member.address || 'N/A';
+            
+            // Load payment history
+            const paymentHistoryDiv = document.getElementById('modalPaymentHistory');
+            paymentHistoryDiv.innerHTML = '<div class="text-center text-gray-500">Loading payment history...</div>';
+            
+            if (member.card_number) {
+                fetch(`/api/member/${member.card_number}/payments/`)
+                    .then(response => response.json())
+                    .then(payments => {
+                        if (payments.length === 0) {
+                            paymentHistoryDiv.innerHTML = '<div class="text-center text-gray-500">No payment history found.</div>';
+                        } else {
+                            let historyHtml = '<div class="space-y-3">';
+                            payments.forEach(payment => {
+                                historyHtml += `
+                                    <div class="bg-white p-4 rounded-lg border border-gray-200">
+                                        <div class="flex justify-between items-start mb-2">
+                                            <span class="font-medium text-gray-900">${payment.fund}</span>
+                                            <span class="text-sm text-gray-500">${payment.payment_date}</span>
+                                        </div>
+                                        <div class="flex justify-between items-center text-sm text-gray-600">
+                                            <span>Amount: R${payment.amount}</span>
+                                            <span>Receipt: #${payment.receipt_number}</span>
+                                        </div>
+                                        <div class="text-xs text-gray-500 mt-1">
+                                            Fund Period: ${payment.Fund_Date_Month} ${payment.Fund_Date_Year}
+                                        </div>
+                                    </div>
+                                `;
+                            });
+                            historyHtml += '</div>';
+                            paymentHistoryDiv.innerHTML = historyHtml;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading payment history:', error);
+                        paymentHistoryDiv.innerHTML = '<div class="text-center text-red-500">Error loading payment history.</div>';
+                    });
+            } else {
+                paymentHistoryDiv.innerHTML = '<div class="text-center text-gray-500">No card number available for payment history.</div>';
+            }
+            
+            // Show modal
+            modal.classList.remove('hidden');
+        };
+        
+        window.closeModal = function() {
+            const modal = document.getElementById('memberDetailModal');
+            modal.classList.add('hidden');
+        };
+        
+        // Close modal when clicking outside
+        document.getElementById('memberDetailModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
     });
-    </script>
+</script>
     {% endblock %}
