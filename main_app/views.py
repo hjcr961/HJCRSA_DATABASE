@@ -1022,21 +1022,48 @@ def barcode_scanner(request):
         'title': 'Barcode Scanner',
     })
 
-@login_required
 def barcode_lookup(request):
     """
-    API endpoint to look up a barcode value and return member details
+    API endpoint to look up a barcode value, retrieve the card_number,
+    and return member details AND Payment History.
     """
     barcode_value = request.GET.get('barcode', '')
-    
+
     if not barcode_value:
         return JsonResponse({'error': 'No barcode provided'}, status=400)
-    
+
     try:
-        # Look up the barcode in the database
+        # 1. Look up the barcode in the Elders model (which contains MemberFullDetails data)
+        # We assume 'branch_member_number' is a foreign key to the MainMembers model
         barcode = Elders.objects.select_related('branch_member_number').get(barcode_value=barcode_value)
-        
-        # Return member details as JSON
+
+        # --- CRITICAL FIX ---
+        # Get the numerical Card_Number from the related MainMembers object.
+        # This numerical ID is the one expected by Treasury.idMain_Member.
+        member_card_number_int = barcode.branch_member_number.card_number
+
+        # Get the string branch_member_number for display/other URLs
+        member_card_number_str = barcode.branch_member_number.branch_member_number
+
+        # 2. Fetch payments using the correct numerical ID
+        # The filter now uses an integer, resolving the "expected a number but got 'JB00076'" error.
+        payments_qs = Treasury.objects.filter(idmain_member=member_card_number_int).order_by('-payment_date')[:5] # Get top 5 recent payments
+
+        payments_data = []
+        for payment in payments_qs:
+            payments_data.append({
+                # Note: The JavaScript needs a 'description' field. We use 'fund' for this.
+                'description': payment.fund,
+                'fund': payment.fund,
+                # Convert Amount to float/decimal for safe JSON transmission and display
+                'amount': float(payment.amount) if payment.amount is not None else 0.00,
+                'Fund_Date_Year': payment.fund_date_year,
+                'Fund_Date_Month': payment.fund_date_month,
+                'payment_date': payment.payment_date.strftime('%Y-%m-%d'),
+                'receipt_number': payment.receipt_number
+            })
+
+        # 3. Return combined member details and payment history as JSON
         return JsonResponse({
             'success': True,
             'member': {
@@ -1044,16 +1071,26 @@ def barcode_lookup(request):
                 'title': barcode.title,
                 'name': barcode.branch_member_number.name,
                 'surname': barcode.branch_member_number.surname,
-                'branch_member_number': barcode.branch_member_number.branch_member_number,
+                'branch_member_number': member_card_number_str,
                 'branch': barcode.branch_member_number.branch,
-                'status': barcode.status,
-                'issue_date': barcode.issue_date.strftime('%Y-%m-%d'),
-                'expiry_date': barcode.expiry_date.strftime('%Y-%m-%d'),
-                'detail_url': reverse('barcode_detail', args=[barcode.id]),
-            }
+                #'status': barcode.elder_status,  # Assuming the status is under elder_status
+                #'issue_date': barcode.elder_issue_date.strftime('%Y-%m-%d'),
+                #'expiry_date': barcode.elder_expiry_date.strftime('%Y-%m-%d'),
+                # history_url should point to the member_payments API using the numerical ID
+                'history_url': reverse('member_payments', args=[member_card_number_int]),
+            },
+            # 4. CRITICAL: Add the payments list under the key 'payments' for the HTML/JS
+            'payments': payments_data
         })
+
     except Elders.DoesNotExist:
-        return JsonResponse({'error': 'Barcode not found'}, status=404)
+        return JsonResponse({'error': f'Member not found for barcode: {barcode_value}'}, status=404)
+    except Exception as e:
+        # Catch other errors, including if a related object is missing
+        print(f"Error in barcode_lookup: {e}")
+        return JsonResponse({'error': f'Internal Server Error: {str(e)}'}, status=500)
+
+
 
 def member_search_api(request):
     """
