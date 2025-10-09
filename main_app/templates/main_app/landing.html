@@ -5,13 +5,11 @@
 
 {% block content %}
 <div class="min-h-[60vh]">
-  <!-- Hero Section -->
   <section class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#1a237e] to-[#283593] p-8 md:p-12 shadow-lg">
     <div class="relative z-10 max-w-5xl">
       <h1 class="text-3xl md:text-4xl font-extrabold text-white tracking-tight">HJCRSA Database</h1>
       <p class="mt-3 text-blue-100 max-w-2xl">Manage members, dependents and treasury records efficiently. Use the quick search or jump into common actions below.</p>
 
-      <!-- Search Bar (same UX as members_list) -->
       <form id="landing-search-form" class="mt-6 md:mt-8">
         <div class="relative w-full md:w-[32rem]">
           <input id="landing-search" type="text" placeholder="Search members..." class="w-full pl-12 pr-4 py-3 rounded-xl border border-indigo-200 focus:border-white focus:ring-2 focus:ring-white/30 text-gray-900" />
@@ -26,7 +24,6 @@
     <div class="absolute -right-24 -bottom-24 w-96 h-96 rounded-full bg-white/10 blur-3xl"></div>
   </section>
 
-  <!-- Quick Actions -->
   <section class="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
     <a href="{% url 'add_main_member' %}" class="group bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition">
       <div class="flex items-center">
@@ -61,6 +58,20 @@
         </div>
       </div>
     </a>
+    <a href="{% url 'barcode_scanner' %}" class="group bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition">
+      <div class="flex items-center">
+        <div class="w-12 h-12 rounded-xl bg-red-50 flex items-center justify-center text-red-700 mr-4 group-hover:scale-105 transition">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+        </div>
+        <div>
+          <p class="text-sm text-gray-500">Card Payment</p>
+          <p class="text-base font-semibold text-gray-900">Scan Barcode</p>
+        </div>
+      </div>
+    </a>
+  </section>
+  
+  <section class="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
     <a href="{% url 'add_treasury_dep' %}" class="group bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition">
       <div class="flex items-center">
         <div class="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center text-purple-700 mr-4 group-hover:scale-105 transition">
@@ -74,7 +85,6 @@
     </a>
   </section>
 
-  <!-- Helpful Links -->
   <section class="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
     <a href="{% url 'member_list' %}" class="bg-white rounded-xl p-4 border border-gray-100 hover:shadow transition flex items-center justify-between">
       <div class="flex items-center">
