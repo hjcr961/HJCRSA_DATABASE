@@ -32,51 +32,73 @@
                 Back to Members
             </a>
         </div>
-        <!-- Form Content -->
         <div class="p-8">
-            <form method="post" class="space-y-8" id="memberForm" action="{% url 'add_main_member' %}">
-                {% csrf_token %}
-                <!-- Main Member Section -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                    {% for field in form %}
-                    {% if field.name != 'branch_member_number' and field.name != 'church_title' %}
-                    <div>
-                        <label class="block text-sm font-semibold text-blue-900 mb-2">
-                            {{ field.label }}
-                        </label>
-                        {% if field.name == 'card_number' %}
-                        <div class="flex space-x-2">
-                            {% render_field field class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm" %}
-                            <button type="button" id="validateCardBtn" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">
-                                Validate
-                            </button>
-                        </div>
-                        {% else %}
-                        {% render_field field class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm" %}
-                        {% endif %}
-                        {% if field.errors %}
-                        <p class="text-red-500 text-xs mt-1">{{ field.errors.0 }}</p>
-                        {% endif %}
-                    </div>
-                    {% endif %}
-                    {% endfor %}
-
-                    <!-- Church Title field -->
-                    <div>
-                        <label class="block text-sm font-semibold text-blue-900 mb-2">
-                            Church Title
-                        </label>
-                        <select name="church_title" id="id_church_title" class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
-                            <option value="">-- Select Title --</option>
-                            <option value="OVERSEERER">OVERSEERER</option>
-                            <option value="Reverend">REVEREND</option>
-                            <option value="EVANGELIST">EVANGELIST</option>
-                            <option value="CONGREGANT">CONGREGANT</option>
-                            <option value="MAMKHOKELI">MAMKHOKELI</option>
-                        </select>
-                    </div>
+    <form method="post" class="space-y-8" id="memberForm" action="{% url 'add_main_member' %}">
+        {% csrf_token %}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+            {% for field in form %}
+            {% if field.name != 'branch_member_number' and field.name != 'church_title' and field.name != 'branch' %}
+            <div>
+                <label class="block text-sm font-semibold text-blue-900 mb-2">
+                    {{ field.label }}
+                </label>
+                {% if field.name == 'card_number' %}
+                <div class="flex space-x-2">
+                    {% render_field field class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm" %}
+                    <button type="button" id="validateCardBtn" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">
+                        Validate
+                    </button>
                 </div>
+                {% else %}
+                {% render_field field class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm" %}
+                {% endif %}
+                {% if field.errors %}
+                <p class="text-red-500 text-xs mt-1">{{ field.errors.0 }}</p>
+                {% endif %}
+            </div>
+            {% endif %}
+            {% endfor %}
 
+            <div>
+                <label class="block text-sm font-semibold text-blue-900 mb-2">
+                    Branch
+                </label>
+                <select name="branch" id="id_branch" class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"><option value="ALEXANDRA">ALEXANDRA</option>
+                        <option value="ALTREK">ALTREK</option>
+                        <option value="CAPE TOWN">CAPE TOWN</option>
+                        <option value="CLERMONT">CLERMONT</option>
+                        <option value="EMBALENHLE">EMBALENHLE</option>
+                        <option value="EVATON">EVATON</option>
+                        <option value="IVORY PARK">IVORY PARK</option>
+                        <option value="JABULANI" selected>JABULANI</option>
+                        <option value="KLIPSPRUIT WEST">KLIPSPRUIT WEST</option>
+                        <option value="LESOTHO ST ROSE">LESOTHO ST ROSE</option>
+                        <option value="MAFIKENG">MAFIKENG</option>
+                        <option value="OGIES">OGIES</option>
+                        <option value="SEBOKENG">SEBOKENG</option>
+                        <option value="ZEERUST 1">ZEERUST 1</option>
+                        <option value="ZEERUST 2">ZEERUST 2</option>
+                </select>
+                {% if form.branch.errors %}
+                    <p class="text-red-500 text-xs mt-1">{{ form.branch.errors.0 }}</p>
+                {% endif %}
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-blue-900 mb-2">
+                    Church Title
+                </label>
+                <select name="church_title" id="id_church_title" class="mt-1 block w-full rounded-lg border-2 border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                    <option value="">-- Select Title --</option>
+                    <option value="OVERSEERER">OVERSEERER</option>
+                    <option value="Reverend">REVEREND</option>
+                    <option value="EVANGELIST">EVANGELIST</option>
+                    <option value="CONGREGANT">CONGREGANT</option>
+                    <option value="MAMKHOKELI">MAMKHOKELI</option>
+                </select>
+            </div>
+        </div>
+        </form>
+</div>
                 <!-- Dependent Section -->
                 <div class="mt-10 border-t pt-8">
                     <div class="flex justify-between items-center mb-6">
