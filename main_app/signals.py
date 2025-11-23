@@ -5,7 +5,7 @@ from .models import MainMembers, Elders
 from .barcode_utils import generate_barcode_image, generate_8_digit_barcode
 
 # List of titles eligible for barcodes
-ELIGIBLE_TITLES = ['EVANGELIST', 'PASTOR', 'ELDER', 'MAMKHOKHELI']
+ELIGIBLE_TITLES = ['EVANGELIST', 'PASTOR', 'ELDER', 'MAMKHOKHELI', 'CONGREGANT']
 
 @receiver(post_save, sender=MainMembers)
 def create_barcode_for_eligible_member(sender, instance, created, **kwargs):
