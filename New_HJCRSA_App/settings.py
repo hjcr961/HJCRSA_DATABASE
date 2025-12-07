@@ -50,6 +50,9 @@ if not DEBUG:
 ALLOWED_HOSTS = ['*']
 
 
+CSRF_TRUSTED_ORIGINS = ['https://hjcrsa-database.onrender.com']
+
+
 # Application definition
 
 INSTALLED_APPS = [
