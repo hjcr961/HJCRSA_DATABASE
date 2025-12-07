@@ -146,7 +146,7 @@
     </div>
 
     <!-- Members Grid -->
-    <div id="membersGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    <div id="membersGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
         {% for member in members %}
         <div class="member-card bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-200"
              data-card-number="{{ member.card_number }}"
@@ -160,9 +160,9 @@
              data-branch-number="{{ member.branch_member_number }}">
 
             <!-- Card Header with Image -->
-            <div class="member-card-header relative h-24 bg-gradient-to-r from-[#1a237e] to-[#283593]">
-                <div class="absolute -bottom-10 left-4">
-                    <img class="member-avatar h-20 w-20 rounded-full border-4 border-white object-cover"
+            <div class="member-card-header relative h-20 bg-gradient-to-r from-[#1a237e] to-[#283593]">
+                <div class="absolute -bottom-8 left-3">
+                    <img class="member-avatar h-16 w-16 rounded-full border-4 border-white object-cover"
                          src="{{ member.picture_url }}"
                          alt="{{ member.name }}"
                          loading="lazy">
@@ -170,41 +170,41 @@
             </div>
 
             <!-- Card Content -->
-            <div class="pt-12 pb-6 px-4">
-                <h3 class="text-lg font-bold text-gray-900">{{ member.name }} {{ member.surname }}</h3>
-                <p class="card-number-chip text-sm text-[#1a237e] font-medium">{{ member.card_number }}</p>
+            <div class="pt-10 pb-4 px-3">
+                <h3 class="text-base font-bold text-gray-900 leading-tight">{{ member.name }} {{ member.surname }}</h3>
+                <p class="card-number-chip text-xs text-[#1a237e] font-medium">{{ member.card_number }}</p>
 
-                <div class="mt-4 space-y-2">
-                    <div class="flex items-center text-sm">
-                        <span class="font-medium text-gray-500 w-24">Branch:</span>
-                        <span>{{ member.branch }}</span>
+                <div class="mt-3 space-y-1.5">
+                    <div class="flex items-center text-xs">
+                        <span class="font-medium text-gray-500 w-20">Branch:</span>
+                        <span class="truncate">{{ member.branch }}</span>
                     </div>
-                    <div class="flex items-center text-sm">
-                        <span class="font-medium text-gray-500 w-24">Branch #:</span>
-                        <span>{{ member.branch_member_number }}</span>
+                    <div class="flex items-center text-xs">
+                        <span class="font-medium text-gray-500 w-20">Branch #:</span>
+                        <span class="truncate">{{ member.branch_member_number }}</span>
                     </div>
-                    <div class="flex items-center text-sm">
-                        <span class="font-medium text-gray-500 w-24">Title:</span>
-                        <span>{% if member.church_title %}{{ member.church_title }}{% else %}-{% endif %}</span>
+                    <div class="flex items-center text-xs">
+                        <span class="font-medium text-gray-500 w-20">Title:</span>
+                        <span class="truncate">{% if member.church_title %}{{ member.church_title }}{% else %}-{% endif %}</span>
                     </div>
                 </div>
 
                 <!-- Card Actions -->
-                <div class="member-card-actions mt-6 flex flex-wrap gap-2">
+                <div class="member-card-actions mt-4 flex flex-wrap gap-1.5">
                     <button onclick="showMemberDetails(this)"
-                    class="px-3 py-1.5 bg-[#e8eaf6] text-[#1a237e] text-xs rounded-lg hover:bg-[#c5cae9] transition-colors" title="View member details">
+                    class="px-2 py-1 bg-[#e8eaf6] text-[#1a237e] text-[10px] rounded hover:bg-[#c5cae9] transition-colors" title="View member details">
                         View Details
                     </button>
                     <button onclick="showPaymentHistory('{{ member.card_number }}')"
-                    class="px-3 py-1.5 bg-green-50 text-green-700 text-xs rounded-lg hover:bg-green-100 transition-colors" title="View card payment history">
+                    class="px-2 py-1 bg-green-50 text-green-700 text-[10px] rounded hover:bg-green-100 transition-colors" title="View card payment history">
                         Card Payments
                     </button>
                     <button onclick="showDependents('{{ member.card_number }}', '{{ member.name }} {{ member.surname }}')"
-                    class="px-3 py-1.5 bg-blue-50 text-blue-700 text-xs rounded-lg hover:bg-blue-100 transition-colors" title="View dependents">
+                    class="px-2 py-1 bg-blue-50 text-blue-700 text-[10px] rounded hover:bg-blue-100 transition-colors" title="View dependents">
                         Dependents ({{ member.dependent_count }})
                     </button>
                     <a href="{% url 'edit_member' pk=member.card_number %}"
-                    class="px-3 py-1.5 bg-yellow-50 text-yellow-700 text-xs rounded-lg hover:bg-yellow-100 transition-colors">
+                    class="px-2 py-1 bg-yellow-50 text-yellow-700 text-[10px] rounded hover:bg-yellow-100 transition-colors">
                         Edit
                     </a>
                 </div>
