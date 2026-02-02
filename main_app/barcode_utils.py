@@ -7,7 +7,7 @@ from io import BytesIO
 from .models import MainMembers, Elders
 
 # Define eligible titles for barcode generation
-ELIGIBLE_TITLES = ['EVANGELIST', 'OVERSEERER', 'REVEREND', 'MAMKHOKHELI']
+
 
 def generate_8_digit_barcode(member):
     """
@@ -58,8 +58,8 @@ def generate_barcode_for_evangelists():
     """
     Find all members with eligible titles and create barcode entries for them in the Elders table
     """
-    # Find all members with eligible titles
-    members_with_titles = MainMembers.objects.filter(church_title__in=ELIGIBLE_TITLES)
+    # Find all members
+    members_with_titles = MainMembers.objects.all()
     
     # Count of processed records
     created_count = 0
@@ -93,8 +93,8 @@ def recreate_all_barcodes():
     Recreate all existing barcodes for eligible members
     This will delete existing barcodes and create new ones
     """
-    # Find all members with eligible titles
-    members_with_titles = MainMembers.objects.filter(church_title__in=ELIGIBLE_TITLES)
+    # Find all members
+    members_with_titles = MainMembers.objects.all()
     
     # Count of processed records
     recreated_count = 0
