@@ -5,15 +5,22 @@ from .models import MainMembers, Elders
 from .barcode_utils import generate_barcode_image, generate_8_digit_barcode
 
 # List of titles eligible for barcodes
-ELIGIBLE_TITLES = ['EVANGELIST', 'PASTOR', 'ELDER', 'MAMKHOKHELI', 'CONGREGANT']
+
 
 @receiver(post_save, sender=MainMembers)
 def create_barcode_for_eligible_member(sender, instance, created, **kwargs):
     """
     Signal handler to automatically create barcodes when members with eligible titles are added or updated
     """
-    # Check if this member has an eligible title and doesn't already have a barcode
-    if instance.church_title in ELIGIBLE_TITLES and not Elders.objects.filter(branch_member_number=instance).exists():
+    # Check if this member doesn't already have a barcode
+    if not Elders.objects.filter(branch_member_number=instance).exists():
+        # Refresh from DB to ensure we have the generated branch_member_number
+        if not instance.branch_member_number:
+            try:
+                instance.refresh_from_db()
+            except Exception:
+                pass
+
         # Generate 8-digit numeric barcode
         barcode_value = generate_8_digit_barcode(instance)
         
