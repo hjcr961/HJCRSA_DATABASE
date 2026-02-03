@@ -1,53 +1,39 @@
+.loading-spinner {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 9999;
+}
+
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid #1a237e;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
 .loading-overlay {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(8px);
+    background: rgba(255, 255, 255, 0.8);
     z-index: 9998;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.loading-spinner {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    justify-content: center;
-}
-
-.spinner {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background: var(--blue-700);
-    animation: pulse 1.4s ease-in-out infinite;
-}
-
-.spinner:nth-child(1) {
-    animation-delay: 0s;
-}
-
-.spinner:nth-child(2) {
-    animation-delay: 0.2s;
-}
-
-.spinner:nth-child(3) {
-    animation-delay: 0.4s;
-}
-
-@keyframes pulse {
-    0%, 100% {
-        opacity: 0.3;
-        transform: scale(0.8);
-    }
-    50% {
-        opacity: 1;
-        transform: scale(1.2);
-    }
+    display: none;
 }
 
 .card-shadow {
@@ -253,6 +239,43 @@
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
+.loading-spinner {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 9999;
+}
+
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid var(--gray-100);
+    border-top: 5px solid var(--blue-700);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.8);
+    z-index: 9998;
+    display: none;
+}
 
 .card-shadow {
     box-shadow: var(--shadow-md);
