@@ -488,10 +488,38 @@ function closeModal() {
 }
 
 function showPaymentHistory(cardNumber) {
-    // API call logic to fetch member payments goes here
-    // Example fetch: fetch(`{% url 'member_payments' card_number='1234' %}`.replace('1234', cardNumber))
-    // ... then populate #paymentHistoryBody
+    const tbody = document.getElementById('paymentHistoryBody');
+    tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-4 text-center">Loading payments...</td></tr>';
+    
     document.getElementById('paymentHistoryModal').classList.remove('hidden');
+
+    // Replace 'member_payments' with your actual Django URL name or path
+    fetch(`/api/member/${cardNumber}/payments/`) 
+        .then(response => response.json())
+        .then(data => {
+            tbody.innerHTML = ''; // Clear loading message
+            if (data.payments.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-4 text-center">No payments found.</td></tr>';
+                return;
+            }
+            data.payments.forEach(payment => {
+                tbody.innerHTML += `
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 text-sm">${payment.fund}</td>
+                        <td class="px-6 py-4 text-sm font-medium">R${payment.amount}</td>
+                        <td class="px-6 py-4 text-sm">${payment.year}</td>
+                        <td class="px-6 py-4 text-sm">${payment.month}</td>
+                        <td class="px-6 py-4 text-sm">${payment.date}</td>
+                        <td class="px-6 py-4 text-sm">
+                            <span class="text-gray-600">${payment.receipt_number || 'N/A'}</span>
+                        </td>
+                    </tr>`;
+            });
+        })
+        .catch(err => {
+            tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-4 text-center text-red-500">Error loading payment data.</td></tr>';
+            console.error('Error loading member payments:', err);
+        });
 }
 
 function closePaymentModal() {
@@ -499,15 +527,83 @@ function closePaymentModal() {
 }
 
 function showDependents(cardNumber, memberName) {
-    // API call logic to fetch member dependents goes here
-    // Example fetch: fetch(`{% url 'member_dependents' card_number='1234' %}`.replace('1234', cardNumber))
-    // ... then populate #dependentsBody
+    const tbody = document.getElementById('dependentsBody');
+    tbody.innerHTML = '<tr><td colspan="3" class="px-6 py-4 text-center">Loading...</td></tr>';
+    
     document.getElementById('dependentsModalTitle').textContent = `Dependents of ${memberName}`;
     document.getElementById('dependentsModal').classList.remove('hidden');
+
+    fetch(`/api/member/${cardNumber}/dependents/`) 
+        .then(response => response.json())
+        .then(data => {
+            tbody.innerHTML = '';
+            
+            if (data.dependents && data.dependents.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" class="px-6 py-4 text-center">No dependents found.</td></tr>';
+                return;
+            }
+            
+            data.dependents.forEach(dep => {
+                tbody.innerHTML += `
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 text-sm">${dep.name}</td>
+                        <td class="px-6 py-4 text-sm">${dep.surname}</td>
+                        <td class="px-6 py-4 text-right">
+                            <button onclick="showDependentPayments('${dep.id}')" class="text-purple-600 hover:text-purple-900 text-xs font-medium">
+                                View Payments
+                            </button>
+                        </td>
+                    </tr>`;
+            });
+                })
+        .catch(err => {
+            tbody.innerHTML = '<tr><td colspan="3" class="px-6 py-4 text-center text-red-500">Error loading dependents.</td></tr>';
+            console.error('Error loading dependents:', err);
+        });
 }
 
 function closeDependentsModal() {
     document.getElementById('dependentsModal').classList.add('hidden');
+}
+
+function showDependentPayments(dependentId) {
+    const tbody = document.getElementById('dependentPaymentHistoryBody');
+    const modalTitle = document.getElementById('dependentPaymentModalTitle');
+    
+    tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-4 text-center">Loading payments...</td></tr>';
+    document.getElementById('dependentPaymentHistoryModal').classList.remove('hidden');
+
+    fetch(`/api/dependent/${dependentId}/payments/`)
+        .then(response => response.json())
+        .then(data => {
+            tbody.innerHTML = '';
+            
+            // Handle both array and object responses for consistency
+            const payments = data.payments || data;
+            
+            if (payments.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-4 text-center">No payments found.</td></tr>';
+                return;
+            }
+            
+            payments.forEach(payment => {
+                tbody.innerHTML += `
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 text-sm">${payment.fund}</td>
+                        <td class="px-6 py-4 text-sm font-medium">R${payment.amount}</td>
+                        <td class="px-6 py-4 text-sm">${payment.year || payment.Fund_Date_Year}</td>
+                        <td class="px-6 py-4 text-sm">${payment.month || payment.Fund_Date_Month}</td>
+                        <td class="px-6 py-4 text-sm">${payment.date || payment.payment_date}</td>
+                        <td class="px-6 py-4 text-sm">
+                            <span class="text-gray-600">${payment.receipt_number || payment.reciept_number || 'N/A'}</span>
+                        </td>
+                    </tr>`;
+            });
+        })
+        .catch(err => {
+            tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-4 text-center text-red-500">Error loading payment data.</td></tr>';
+            console.error('Error loading dependent payments:', err);
+        });
 }
 
 function closeDependentPaymentModal() {
