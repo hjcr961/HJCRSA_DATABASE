@@ -94,6 +94,12 @@ function populateBranchFilter() {
     const branchFilterContent = document.getElementById('branchFilterContent');
     if (!branchFilterContent) return;
 
+    // Safety check: ensure allMembers is populated
+    if (allMembers.length === 0) {
+        console.warn('No members found when populating branch filter');
+        return;
+    }
+
     // 1. Get unique, trimmed, and sorted branch names
     const branches = [...new Set(allMembers.map(member => member.branch).filter(branch => branch))]
         .map(b => b.trim())
@@ -124,6 +130,12 @@ function populateBranchFilter() {
 function populateChurchTitleFilter() {
     const churchTitleFilterContent = document.getElementById('churchTitleFilterContent');
     if (!churchTitleFilterContent) return;
+
+    // Safety check: ensure allMembers is populated
+    if (allMembers.length === 0) {
+        console.warn('No members found when populating church title filter');
+        return;
+    }
 
     const churchTitles = [...new Set(allMembers.map(member => member.churchTitle).filter(title => title))]
         .map(t => t.trim())
@@ -419,17 +431,17 @@ function toggleDropdown(event) {
     const dropdown = dropdownBtn.closest('.filter-dropdown');
     const content = dropdown.querySelector('.filter-content');
 
-    const isOpen = content.classList.contains('active');
+    const isOpen = content.classList.contains('show');
     closeAllDropdowns(); // Close others first
 
     if (!isOpen) {
-        content.classList.add('active');
+        content.classList.add('show');
     }
 }
 
 function closeAllDropdowns() {
     document.querySelectorAll('.filter-content').forEach(content => {
-        content.classList.remove('active');
+        content.classList.remove('show');
     });
 }
 
