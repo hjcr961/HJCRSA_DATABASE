@@ -51,7 +51,7 @@
     </div>    
     
     <!-- Enhanced Sidebar -->
-    <aside class="fixed top-0 left-0 w-64 h-full glass-sidebar shadow-2xl transition-all duration-300 ease-in-out z-30" aria-label="Sidebar">
+    <aside class="fixed top-0 left-0 w-64 h-full glass-sidebar shadow-2xl transition-all duration-300 ease-in-out z-30 lg:translate-x-0 -translate-x-full" aria-label="Sidebar">
         <div class="h-full flex flex-col">
             <!-- Enhanced Logo and Brand -->
             <div class="p-6 border-b border-gray-100">
@@ -154,8 +154,8 @@
             </div>
 
             <!-- Enhanced User Section -->
-            <div class="mt-auto p-4 border-t border-gray-100 bg-gradient-to-r from-gray-50 to-blue-50">
-                <div class="flex items-center space-x-3 p-3 rounded-xl bg-white shadow-sm hover:shadow-md transition-all duration-300">
+            <div class="mt-auto p-4 border-t border-gray-100 user-section">
+                <div class="flex items-center space-x-3 p-3 rounded-xl bg-white shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100">
                     <div class="user-avatar w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg">
                         {{ user.username|slice:':1'|upper }}
                     </div>
@@ -179,34 +179,33 @@
     </aside>
         
     <!-- Enhanced Top Navigation Bar -->
-<!-- Enhanced Top Navigation Bar -->
     <nav class="fixed top-0 left-0 right-0 z-40 glass-nav shadow-lg">
-    <div class="flex items-center justify-between h-20 px-6 max-w-full mx-auto">
-        <div class="flex items-center">
-            <button id="toggleSidebar" class="p-2 mr-4 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl lg:hidden transition-all duration-200">
-                <i class="fas fa-bars text-xl"></i>
-            </button>
-            <a href="{% url 'home' %}" class="flex items-center logo-container">
-                <img src="{% static 'main_app/images/logo.png' %}" class="h-16 w-auto mr-4 rounded-lg shadow-md" alt="HJCRSA Logo" />
-                <div class="hidden md:block">
-                    <span class="text-2xl font-bold bg-gradient-to-r from-[#1a237e] to-[#283593] bg-clip-text text-transparent">
-                        Holy Jerusalem Church Of Repentance Of South Africa
-                    </span>
-                    <p class="text-sm text-gray-500">Management & Information System</p>
-                </div>
-                <span class="text-xl font-bold bg-gradient-to-r from-[#1a237e] to-[#283593] bg-clip-text text-transparent md:hidden">HJCRSA</span>
-            </a>
-        </div>
+        <div class="flex items-center justify-between h-20 px-4 lg:px-6 max-w-full mx-auto">
+            <div class="flex items-center flex-1 min-w-0">
+                <button id="toggleSidebar" class="p-2 mr-3 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl lg:hidden transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+                <a href="{% url 'home' %}" class="flex items-center logo-container flex-shrink-0 min-w-0">
+                    <img src="{% static 'main_app/images/logo.png' %}" class="h-12 lg:h-16 w-auto mr-3 lg:mr-4 rounded-lg shadow-md" alt="HJCRSA Logo" />
+                    <div class="hidden lg:block min-w-0">
+                        <span class="text-xl lg:text-2xl font-bold bg-gradient-to-r from-[#1a237e] to-[#283593] bg-clip-text text-transparent block truncate">
+                            Holy Jerusalem Church Of Repentance Of South Africa
+                        </span>
+                        <p class="text-xs lg:text-sm text-gray-500 truncate">Management & Information System</p>
+                    </div>
+                    <span class="text-lg lg:text-xl font-bold bg-gradient-to-r from-[#1a237e] to-[#283593] bg-clip-text text-transparent lg:hidden">HJCRSA</span>
+                </a>
+            </div>
 
             <!-- Quick Actions -->
-            <div class="hidden md:flex items-center space-x-4">
-                <div class="flex items-center space-x-2 bg-gray-100 rounded-full px-4 py-2">
-                    <i class="fas fa-clock text-gray-500"></i>
-                    <span class="text-sm text-gray-600" id="current-time"></span>
+            <div class="hidden md:flex items-center space-x-3 flex-shrink-0">
+                <div class="flex items-center space-x-2 bg-gray-100 rounded-full px-4 py-2 quick-action-badge">
+                    <i class="fas fa-clock text-gray-500 text-sm"></i>
+                    <span class="text-sm text-gray-600 font-medium" id="current-time"></span>
                 </div>
-                <div class="flex items-center space-x-2 bg-blue-100 rounded-full px-4 py-2">
-                    <i class="fas fa-calendar text-blue-500"></i>
-                    <span class="text-sm text-blue-600" id="current-date"></span>
+                <div class="flex items-center space-x-2 bg-blue-100 rounded-full px-4 py-2 quick-action-badge">
+                    <i class="fas fa-calendar text-blue-500 text-sm"></i>
+                    <span class="text-sm text-blue-600 font-medium" id="current-date"></span>
                 </div>
             </div>
         </div>
@@ -215,12 +214,12 @@
     <!-- Mobile Sidebar Overlay -->
     <div id="sidebar-overlay" class="fixed inset-0 sidebar-overlay z-20 lg:hidden hidden"></div>
 
-    <!-- Main Content Area - NO ANIMATIONS -->
-    <main class="ml-64 pt-16 transition-all duration-300" id="main-content">
-        <div class="p-6">
+    <!-- Main Content Area -->
+    <main class="ml-0 lg:ml-64 pt-20 transition-all duration-300" id="main-content">
+        <div class="p-4 lg:p-6">
             <!-- Enhanced Breadcrumb -->
-            <div class="mb-6">
-                <nav class="flex items-center space-x-2 bg-white rounded-xl p-4 shadow-sm" aria-label="Breadcrumb">
+            <div class="mb-4 lg:mb-6">
+                <nav class="flex items-center space-x-2 bg-white rounded-xl p-3 lg:p-4 shadow-sm border border-gray-100" aria-label="Breadcrumb">
                     <div class="flex items-center space-x-2">
                         <i class="fas fa-home text-blue-500"></i>
                         <a href="{% url 'home' %}" class="breadcrumb-item text-sm font-medium text-blue-600 hover:text-blue-800">
@@ -231,8 +230,8 @@
                 </nav>
             </div>
             
-            <!-- Content Wrapper - COMPLETELY STATIC, NO ANIMATIONS -->
-            <div id="content-wrapper" class="bg-white rounded-2xl shadow-lg p-6 min-h-[calc(100vh-200px)]">
+            <!-- Content Wrapper -->
+            <div id="content-wrapper" class="bg-white rounded-2xl shadow-lg p-4 lg:p-6 min-h-[calc(100vh-200px)] border border-gray-100">
                 {% block content %}{% endblock %}
             </div>
         </div>
