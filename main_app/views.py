@@ -615,20 +615,19 @@ def member_payments(request, card_number):
         payments = [
             {
                 'fund': row[0],
-                'amount': row[1],
-                'Fund_Date_Year': row[2],
-                'Fund_Date_Month': row[3],
-                'payment_date': row[4].strftime('%Y-%m-%d'),
+                'amount': float(row[1]) if row[1] else 0,
+                'year': row[2],
+                'month': row[3],
+                'date': row[4].strftime('%Y-%m-%d') if row[4] else '',
                 'receipt_number': row[5]
             }
             for row in cursor.fetchall()
         ]
         
-    return JsonResponse(payments, safe=False)
+    # Wrap in a dictionary so JS can access 'data.payments'
+    return JsonResponse({'payments': payments})
 
-
-
-
+# 2. Update Member Dependents to return an object with a key
 def member_dependents(request, card_number):
     with connection.cursor() as cursor:
         cursor.execute("""
@@ -640,14 +639,14 @@ def member_dependents(request, card_number):
         
         dependents = [
             {
-                'idDependents': row[0],
+                'id': row[0],
                 'name': row[1],
                 'surname': row[2]
             }
             for row in cursor.fetchall()
         ]
         
-    return JsonResponse(dependents, safe=False)
+    return JsonResponse({'dependents': dependents})
 
 
 
@@ -868,24 +867,28 @@ def get_dependent_payments(request, card_number):
     with connection.cursor() as cursor:
         cursor.execute("""
             SELECT 
-                d.name,
-                d.surname,
-                td.Fund,
-                td.Amount,
-                td.Fund_Date_Year,
-                td.Reciept_Number,
-                td.Payment_Date
+                d.name, d.surname, td.Fund, td.Amount, 
+                td.Fund_Date_Year, td.Reciept_Number, td.Payment_Date
             FROM Treasury_Dep td
             JOIN Dependents d ON td.Dependent_ID = d.idDependents
             WHERE td.Card_Number = %s
             ORDER BY td.Payment_Date DESC
         """, [card_number])
         
-        columns = [col[0] for col in cursor.description]
-        payments = [dict(zip(columns, row)) for row in cursor.fetchall()]
+        payments = [
+            {
+                'name': row[0],
+                'surname': row[1],
+                'fund': row[2],
+                'amount': float(row[3]) if row[3] else 0,
+                'year': row[4],
+                'receipt': row[5],
+                'date': row[6].strftime('%Y-%m-%d') if row[6] else ''
+            }
+            for row in cursor.fetchall()
+        ]
         
-    return JsonResponse(payments, safe=False)
-
+    return JsonResponse({'payments': payments})
 def signup_view(request):
     if request.method == 'POST':
         name = request.POST.get('name')
